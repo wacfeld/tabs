@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -g -MMD -Wall
-EXEC = $(shell basename $(CURDIR))
+EXEC = $(shell basename $(CURDIR)).out
 LIBS = 
 OBJECTS = main.o
 DEPENDS = ${OBJECTS:.o=.d}

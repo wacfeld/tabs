@@ -4,6 +4,12 @@
 typedef unsigned char uchar;
 typedef unsigned int uint;
 
+struct bytes
+{
+  int len;
+  char *b;
+};
+
 // initial header chunk; chunk type followed by length (6 bytes)
 const uchar head[] = {'M', 'T', 'h', 'd', 0, 0, 0, 6};
 
@@ -55,4 +61,19 @@ int make_vlq(uint n, uchar *vlq)
   }
 
   return len;
+}
+
+// create a time signature given a numerator and denominator (e.x. cut time 2, 4)
+void make_timesig(uint numer, uint denom)
+{
+  int denom_lg = 0;
+  // take the log base 2 of denom
+  while(denom != 1)
+  {
+    denom_lg++;
+    assert(denom % 2 == 0); // denom must be a power of 2
+    denom /= 2;
+  }
+
+  
 }

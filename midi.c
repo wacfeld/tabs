@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <assert.h>
+#include <stdlib.h>
 
 typedef unsigned char uchar;
 typedef unsigned int uint;
@@ -68,8 +69,11 @@ struct bytes make_vlq(uint n)
 // create a time signature event given a numerator and denominator (e.x. cut time 2, 4)
 struct bytes make_timesig(uchar numer, uchar denom)
 {
-  uchar denom_lg = 0;
+  assert(numer);
+  assert(denom);
+  
   // take the log base 2 of denom
+  uchar denom_lg = 0;
   while(denom != 1)
   {
     denom_lg++;
@@ -77,6 +81,7 @@ struct bytes make_timesig(uchar numer, uchar denom)
     denom /= 2;
   }
 
+  // time sigs event is 7 bytes
   uchar *sig = malloc(7);
   sig[0] = 0xFF;
   sig[1] = 0x58;
@@ -87,5 +92,40 @@ struct bytes make_timesig(uchar numer, uchar denom)
   sig[6] = 8; // 32nds per 24 clocks
   
   struct bytes b = {7, sig};
+  return b;
+}
+
+// create a tempo event given beats per minute
+// time signature is needed to calculate tempo
+// 1 beat = 1 bar, for simplicity. 60 bpm is 60 bars per minute
+struct bytes make_tempo(uint bpm, uchar numer, uchar denom)
+{
+  assert(numer);
+  assert(denom);
+  assert(bpm);
+  
+  uchar *tempo = malloc(6); // tempo event is 6 bytes
+  tempo[0] = 0xFF;
+  tempo[1] = 0x51;
+  tempo[2] = 0x03;
+
+  // calculate microseconds per quarter note:
+  // quarters/bar = 4 * numer / denom
+  // quarters/min = 4 * bpm * numer / denom
+  // quarters/sec = 4 * bpm * numer / (60 * denom)
+  // microseconds/quarter = 60 * 1000000 * denom / (4 * bpm * numer)
+  long m = ((long) 60 * 1000000 * denom) / (4 * bpm * numer);
+
+  // must fit in 24 bits
+  assert(m <= 0xFFFFFF);
+
+  // write into tempo[], most significant byte first
+  tempo[5] = m % 0xFF;
+  tempo >>= 8;
+  tempo[4] = m % 0xFF;
+  tempo >>= 8;
+  tempo[3] = m % 0xFF;
+
+  struct bytes b = {6, tempo};
   return b;
 }

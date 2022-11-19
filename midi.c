@@ -7,7 +7,7 @@ typedef unsigned int uint;
 struct bytes
 {
   int len;
-  char *b;
+  uchar *b;
 };
 
 // initial header chunk; chunk type followed by length (6 bytes)
@@ -35,7 +35,7 @@ void set_division(uint d)
 // create variable length quantity from integer
 struct bytes make_vlq(uint n)
 {
-  char *vlq = malloc(4); // vlqs are at most 4 bytes
+  uchar *vlq = malloc(4); // vlqs are at most 4 bytes
   
   // largest division allowed is 7 Fs
   assert(n <= 0x0FFFFFFF);
@@ -65,10 +65,10 @@ struct bytes make_vlq(uint n)
   return b;
 }
 
-// create a time signature given a numerator and denominator (e.x. cut time 2, 4)
-void make_timesig(uint numer, uint denom)
+// create a time signature event given a numerator and denominator (e.x. cut time 2, 4)
+struct bytes make_timesig(uchar numer, uchar denom)
 {
-  int denom_lg = 0;
+  uchar denom_lg = 0;
   // take the log base 2 of denom
   while(denom != 1)
   {
@@ -77,5 +77,15 @@ void make_timesig(uint numer, uint denom)
     denom /= 2;
   }
 
+  uchar *sig = malloc(7);
+  sig[0] = 0xFF;
+  sig[1] = 0x58;
+  sig[2] = 0x04;
+  sig[3] = numer;
+  sig[4] = denom_lg;
+  sig[5] = 24; // clocks per metronome click
+  sig[6] = 8; // 32nds per 24 clocks
   
+  struct bytes b = {7, sig};
+  return b;
 }

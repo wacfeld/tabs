@@ -33,9 +33,10 @@ void set_division(uint d)
 }
 
 // create variable length quantity from integer
-// returns number of bytes (at most 4), writes bytes into vlq
-int make_vlq(uint n, uchar *vlq)
+struct bytes make_vlq(uint n)
 {
+  char *vlq = malloc(4); // vlqs are at most 4 bytes
+  
   // largest division allowed is 7 Fs
   assert(n <= 0x0FFFFFFF);
   
@@ -60,7 +61,8 @@ int make_vlq(uint n, uchar *vlq)
     vlq[len-1 - i] = temp;
   }
 
-  return len;
+  struct bytes b = {len, vlq};
+  return b;
 }
 
 // create a time signature given a numerator and denominator (e.x. cut time 2, 4)

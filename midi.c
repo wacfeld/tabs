@@ -14,7 +14,10 @@ void put_bytes(struct bytes b, int discard)
   }
 
   if(discard) // no longer needed, call free()
+  {
     free(b.b);
+    b.b = NULL;
+  }
 }
 
 struct bytes make_bytes(int n, ...)
@@ -112,7 +115,10 @@ struct bytes byte_cat(struct bytes x, struct bytes y, int reall, int discard)
   x.len += y.len; // update length
 
   if(discard) // discard copied contents, if instructed to
+  {
     free(y.b);
+    y.b = NULL;
+  }
   
   return x;
 }
@@ -145,7 +151,10 @@ struct bytes make_track_chunk(struct track tr, int discard)
   }
 
   if(discard)
+  {
     free(tr.evs);
+    tr.evs = NULL;
+  }
 
   return b;
 }

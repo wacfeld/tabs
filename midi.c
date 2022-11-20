@@ -135,7 +135,7 @@ struct bytes make_mtrk_event(uint delta, struct bytes ev)
   struct bytes vlq = make_vlq(delta);       // convert delta into variable length quantity
   struct bytes b = byte_cat(vlq, ev, 1, 1);
 
-  return vlq;
+  return b;
 }
 
 // create a time signature event given a numerator and denominator (e.x. cut time 2, 4)

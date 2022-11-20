@@ -36,15 +36,7 @@ struct bytes make_header(uint format, uint tracks, uint division)
   assert(division <= 0x7FFF); // bit 15 must be clear
   
   uchar *head = malloc(14);
-
-  head[0] = 'M';
-  head[1] = 'T';
-  head[2] = 'h';
-  head[3] = 'd';
-  head[4] = 0;
-  head[5] = 0;
-  head[6] = 0;
-  head[7] = 6;
+  write_bytes(head, 8, 'M', 'T', 'h', 'd', 0, 0, 0, 6);
   
   head[8] = format >> 8;
   head[9] = format % 0xFF;
@@ -141,13 +133,7 @@ struct bytes make_timesig(uchar numer, uchar denom)
 
   // time sigs event is 7 bytes
   uchar *sig = malloc(7);
-  sig[0] = 0xFF;
-  sig[1] = 0x58;
-  sig[2] = 0x04;
-  sig[3] = numer;
-  sig[4] = denom_lg;
-  sig[5] = 24; // clocks per metronome click
-  sig[6] = 8; // 32nds per 24 clocks
+  write_bytes(sig, 7, 0xFF, 0x58, 0x04, numer, denom_lg, 24, 8);
   
   struct bytes b = {7, sig};
   return b;
@@ -163,10 +149,8 @@ struct bytes make_tempo(uint bpm, uchar numer, uchar denom)
   assert(bpm);
   
   uchar *tempo = malloc(6); // tempo event is 6 bytes
-  tempo[0] = 0xFF;
-  tempo[1] = 0x51;
-  tempo[2] = 0x03;
-
+  write_bytes(tempo, 3, 0xFF, 0x51, 0x03);
+  
   // calculate microseconds per quarter note:
   // quarters/bar = 4 * numer / denom
   // quarters/min = 4 * bpm * numer / denom

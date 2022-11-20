@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include "midi.h"
 
@@ -16,14 +17,14 @@ void put_bytes(struct bytes b, int discard)
     free(b.b);
 }
 
-void write_bytes(char *s, int n, ...)
+void write_bytes(uchar *s, int n, ...)
 {
   va_list ap;
   va_start(ap, n);
 
   for(int i = 0; i < n; i++)
   {
-    s[i] = va_arg(ap, uchar);
+    s[i] = va_arg(ap, int); // has to be int because unnamed args get promoted
   }
   
   va_end(ap);
@@ -94,7 +95,7 @@ struct bytes byte_cat(struct bytes x, struct bytes y)
   return x;
 }
 
-struct bytes make_track_chunk(track tr)
+struct bytes make_track_chunk(struct track tr)
 {
   // calculate number of bytes in body
   uint body_len = 0;

@@ -14,10 +14,12 @@ int main()
   struct bytes tempo = make_tempo(80, 2, 4);
 
   struct bytes note = make_bytes(3, 0x99, 0x33, 0x59);
+  struct bytes off = make_bytes(3, 0x89, 0x33, 0x59);
+  struct bytes end = make_bytes(3, 0xff, 0x2f, 0x00);
   
-  struct bytes evs[] = {make_mtrk_event(0, sig), make_mtrk_event(0, tempo), make_mtrk_event(0, note)};
+  struct bytes evs[] = {make_mtrk_event(0, sig), make_mtrk_event(0, tempo), make_mtrk_event(0, note), make_mtrk_event(0, off), make_mtrk_event(0, end)};
   
-  struct track tr = {3, evs};
+  struct track tr = {5, evs};
   struct bytes chunk = make_track_chunk(tr, 0);
   
   put_bytes(chunk, 1);

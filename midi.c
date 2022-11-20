@@ -16,7 +16,7 @@ struct bytes make_header(uint format, uint tracks, uint division)
 {
   assert(format <= 0xFFFF);
   assert(tracks <= 0xFFFF);
-  assert(division <= 0xFFFF);
+  assert(division <= 0x7FFF); // bit 15 must be clear
   
   uchar *head = malloc(14);
 

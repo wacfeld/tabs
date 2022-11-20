@@ -4,12 +4,15 @@
 
 #include "midi.h"
 
-void put_bytes(struct bytes b)
+void put_bytes(struct bytes b, int discard)
 {
   for(int i = 0; i < b.len; i++)
   {
     putchar(b.b[i]);
   }
+
+  if(discard) // no longer needed, call free()
+    free(b.b);
 }
 
 struct bytes make_header(uint format, uint tracks, uint division)

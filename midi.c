@@ -109,11 +109,7 @@ struct bytes make_track_chunk(track tr)
 struct bytes make_mtrk_event(uint delta, struct bytes ev)
 {
   struct bytes vlq = make_vlq(delta);       // convert delta into variable length quantity
-  vlq.b = realloc(vlq.b, vlq.len + ev.len); // make room for event
-  memcpy(vlq.b + vlq.len, ev.b, ev.len);    // append event to vlq
-  
-  vlq.len += ev.len;
-  free(ev.b);
+  struct bytes b = byte_cat(vlq, ev);
 
   return vlq;
 }

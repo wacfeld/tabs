@@ -16,12 +16,10 @@ void put_bytes(struct bytes b, int discard)
     free(b.b);
 }
 
-uchar *write_bytes(int n, ...)
+void write_bytes(char *s, int n, ...)
 {
   va_list ap;
   va_start(ap, n);
-
-  uchar *s = malloc(n);
 
   for(int i = 0; i < n; i++)
   {

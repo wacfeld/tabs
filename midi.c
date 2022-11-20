@@ -17,6 +17,24 @@ void put_bytes(struct bytes b, int discard)
     free(b.b);
 }
 
+struct bytes make_bytes(int n, ...)
+{
+  va_list ap;
+  va_start(ap, n);
+
+  uchar *s = malloc(n);
+  
+  for(int i = 0; i < n; i++)
+  {
+    s[i] = va_arg(ap, int);
+  }
+
+  va_end(ap);
+  
+  struct bytes b = {n, s};
+  return b;
+}
+
 void write_bytes(uchar *s, int n, ...)
 {
   va_list ap;
@@ -99,7 +117,7 @@ struct bytes byte_cat(struct bytes x, struct bytes y, int reall, int discard)
   return x;
 }
 
-struct bytes make_track_chunk(struct track tr)
+struct bytes make_track_chunk(struct track tr, int discard)
 {
   // calculate number of bytes in body
   unsigned long body_len = 0;
@@ -125,6 +143,9 @@ struct bytes make_track_chunk(struct track tr)
   {
     b = byte_cat(b, tr.evs[i], 0, 1); // do not realloc(), do free()
   }
+
+  if(discard)
+    free(tr.evs);
 
   return b;
 }

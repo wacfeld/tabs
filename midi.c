@@ -58,11 +58,11 @@ struct bytes make_header(uint format, uint tracks, uint division)
   write_bytes(head, 8, 'M', 'T', 'h', 'd', 0, 0, 0, 6);
   
   head[8] = format >> 8;
-  head[9] = format % 0xFF;
+  head[9] = format % 0x100;
   head[10] = tracks >> 8;
-  head[11] = tracks % 0xFF;
+  head[11] = tracks % 0x100;
   head[12] = division >> 8;
-  head[13] = division % 0xFF;
+  head[13] = division % 0x100;
 
   struct bytes b = {14, head};
   return b;
@@ -78,14 +78,14 @@ struct bytes make_vlq(uint n)
   
   // write reverse order into vlq
   int len = 0;
-  while(n)
+  do
   {
     vlq[len] = n & 0x7F; // mask out lowest 7 bits
     vlq[len] |= 0x80;    // set bit 7
     
     len++;
     n >>= 7; // shift right 7 bits
-  }
+  } while(n);
 
   vlq[0] &= 0x7F; // clear bit 7 of lowest significance byte
   
@@ -131,10 +131,10 @@ struct bytes make_track_chunk(struct track tr, int discard)
   // write chunk type and length
   uchar *chunk = malloc(8 + body_len);
   write_bytes(chunk, 4, 'M', 'T', 'r', 'k');
-  chunk[4] = (body_len >> 24) % 0xFF;
-  chunk[5] = (body_len >> 16) % 0xFF;
-  chunk[6] = (body_len >> 8)  % 0xFF;
-  chunk[7] = (body_len)       % 0xFF;
+  chunk[4] = (body_len >> 24) % 0x100;
+  chunk[5] = (body_len >> 16) % 0x100;
+  chunk[6] = (body_len >> 8)  % 0x100;
+  chunk[7] = (body_len)       % 0x100;
   
   struct bytes b = {8, chunk};
   
@@ -205,11 +205,11 @@ struct bytes make_tempo(uint bpm, uchar numer, uchar denom)
   assert(m <= 0xFFFFFF);
 
   // write into tempo[], most significant byte first
-  tempo[5] = m % 0xFF;
+  tempo[5] = m % 0x100;
   m >>= 8;
-  tempo[4] = m % 0xFF;
+  tempo[4] = m % 0x100;
   m >>= 8;
-  tempo[3] = m % 0xFF;
+  tempo[3] = m % 0x100;
 
   struct bytes b = {6, tempo};
   return b;

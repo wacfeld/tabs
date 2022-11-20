@@ -10,7 +10,7 @@ struct bytes
   uchar *b;
 };
 
-void put_bytes(struct bytes b)
+void put_bytes(struct bytes b, int discard);
 
 struct bytes make_header(uint format, uint tracks, uint division);
 struct bytes make_timesig(uchar numer, uchar denom);

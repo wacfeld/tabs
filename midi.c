@@ -33,6 +33,34 @@ void set_division(uint d)
   division[1] = d;      // lowest 8 bits
 }
 
+struct bytes make_header(uint format, uint tracks, uint division)
+{
+  assert(format <= 0xFFFF);
+  assert(tracks <= 0xFFFF);
+  assert(division <= 0xFFFF);
+  
+  uchar *head = malloc(14);
+
+  head[0] = 'M';
+  head[1] = 'T';
+  head[2] = 'h';
+  head[3] = 'd';
+  head[4] = 0;
+  head[5] = 0;
+  head[6] = 0;
+  head[7] = 6;
+  
+  head[8] = format >> 8;
+  head[9] = format % 0xFF;
+  head[10] = tracks >> 8;
+  head[11] = tracks % 0xFF;
+  head[12] = division >> 8;
+  head[13] = division % 0xFF;
+
+  struct bytes b = {14, head};
+  return b;
+}
+
 // create variable length quantity from integer
 struct bytes make_vlq(uint n)
 {

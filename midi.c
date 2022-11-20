@@ -120,9 +120,9 @@ struct bytes make_tempo(uint bpm, uchar numer, uchar denom)
 
   // write into tempo[], most significant byte first
   tempo[5] = m % 0xFF;
-  tempo >>= 8;
+  m >>= 8;
   tempo[4] = m % 0xFF;
-  tempo >>= 8;
+  m >>= 8;
   tempo[3] = m % 0xFF;
 
   struct bytes b = {6, tempo};

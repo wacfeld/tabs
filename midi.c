@@ -2,14 +2,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
-typedef unsigned char uchar;
-typedef unsigned int uint;
-
-struct bytes
-{
-  int len;
-  uchar *b;
-};
+#include "midi.h"
 
 struct bytes make_header(uint format, uint tracks, uint division)
 {

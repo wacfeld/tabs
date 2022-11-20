@@ -4,6 +4,14 @@
 
 #include "midi.h"
 
+void put_bytes(struct bytes b)
+{
+  for(int i = 0; i < b.len; i++)
+  {
+    putchar(b.b[i]);
+  }
+}
+
 struct bytes make_header(uint format, uint tracks, uint division)
 {
   assert(format <= 0xFFFF);

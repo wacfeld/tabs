@@ -76,6 +76,19 @@ struct bytes make_vlq(uint n)
   return b;
 }
 
+// create an MTrk event, consisting of a delta followed by an event
+struct bytes make_mtrk_event(uint delta, struct bytes ev)
+{
+  struct bytes vlq = make_vlq(delta);       // convert delta into variable length quantity
+  vlq.b = realloc(vlq.b, vlq.len + ev.len); // make room for event
+  memcpy(vlq.b + vlq.len, ev.b, ev.len);    // append event to vlq
+  
+  vlq.len += ev.len;
+  free(ev.b);
+
+  return vlq;
+}
+
 // create a time signature event given a numerator and denominator (e.x. cut time 2, 4)
 struct bytes make_timesig(uchar numer, uchar denom)
 {

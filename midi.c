@@ -84,13 +84,17 @@ struct bytes make_vlq(uint n)
 }
 
 // concatenate y onto x, return x
-struct bytes byte_cat(struct bytes x, struct bytes y)
+struct bytes byte_cat(struct bytes x, struct bytes y, int reall, int discard)
 {
-  x.b = realloc(x.b, x.len + y.len); // make room for y.b
+  if(reall) // for efficiency, some callers might have allocated beforehand
+    x.b = realloc(x.b, x.len + y.len); // make room for y.b
+  
   memcpy(x.b + x.len, y.b, y.len); // append y.b to x.b
   
   x.len += y.len; // update length
-  free(y.b); // discard copied contents
+
+  if(discard) // discard copied contents, if instructed to
+    free(y.b);
   
   return x;
 }
@@ -98,21 +102,38 @@ struct bytes byte_cat(struct bytes x, struct bytes y)
 struct bytes make_track_chunk(struct track tr)
 {
   // calculate number of bytes in body
-  uint body_len = 0;
+  unsigned long body_len = 0;
   for(int i = 0; i < tr.n_evs; i++)
   {
     body_len += tr.evs[i].len;
   }
 
-  // // write chunk type and 
-  // uchar *chunk = malloc(
+  assert(body_len <= 0xFFFFFFFF); // must fit in 4 bytes
+  
+  // write chunk type and length
+  uchar *chunk = malloc(8 + body_len);
+  write_bytes(chunk, 4, 'M', 'T', 'r', 'k');
+  chunk[4] = (body_len >> 24) % 0xFF;
+  chunk[5] = (body_len >> 16) % 0xFF;
+  chunk[6] = (body_len >> 8)  % 0xFF;
+  chunk[7] = (body_len)       % 0xFF;
+  
+  struct bytes b = {8, chunk};
+  
+  // append tracks
+  for(int i = 0; i < tr.n_evs; i++)
+  {
+    b = byte_cat(b, tr.evs[i], 0, 1); // do not realloc(), do free()
+  }
+
+  return b;
 }
 
 // create an MTrk event, consisting of a delta followed by an event
 struct bytes make_mtrk_event(uint delta, struct bytes ev)
 {
   struct bytes vlq = make_vlq(delta);       // convert delta into variable length quantity
-  struct bytes b = byte_cat(vlq, ev);
+  struct bytes b = byte_cat(vlq, ev, 1, 1);
 
   return vlq;
 }

@@ -19,7 +19,7 @@ struct track
 void put_bytes(struct bytes b, int discard);
 void write_bytes(uchar *s, int n, ...);
 
-struct bytes byte_cat(struct bytes x, struct bytes y);
+struct bytes byte_cat(struct bytes x, struct bytes y, int reall, int discard);
 struct bytes make_track_chunk(struct track tr);
 
 struct bytes make_header(uint format, uint tracks, uint division);

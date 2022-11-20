@@ -1,1 +1,1 @@
-a configurable drum tablature to MIDI file converter
+(WIP) a configurable drum tablature to MIDI file converter

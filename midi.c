@@ -16,6 +16,21 @@ void put_bytes(struct bytes b, int discard)
     free(b.b);
 }
 
+uchar *write_bytes(int n, ...)
+{
+  va_list ap;
+  va_start(ap, n);
+
+  uchar *s = malloc(n);
+
+  for(int i = 0; i < n; i++)
+  {
+    s[i] = va_arg(ap, uchar);
+  }
+  
+  va_end(ap);
+}
+
 struct bytes make_header(uint format, uint tracks, uint division)
 {
   assert(format <= 0xFFFF);
@@ -97,12 +112,9 @@ struct bytes make_track_chunk(track tr)
   {
     body_len += tr.evs[i].len;
   }
-  
-  // create vlq
-  struct byte vlq = make_vlq(body_len);
-  
 
-  //
+  // // write chunk type and 
+  // uchar *chunk = malloc(
 }
 
 // create an MTrk event, consisting of a delta followed by an event

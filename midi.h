@@ -10,6 +10,12 @@ struct bytes
   uchar *b;
 };
 
+struct track
+{
+  int n_evs;
+  struct byte *evs;
+};
+
 void put_bytes(struct bytes b, int discard);
 
 struct bytes make_header(uint format, uint tracks, uint division);

@@ -77,6 +77,34 @@ struct bytes make_vlq(uint n)
   return b;
 }
 
+// concatenate y onto x, return x
+struct bytes byte_cat(struct bytes x, struct bytes y)
+{
+  x.b = realloc(x.b, x.len + y.len); // make room for y.b
+  memcpy(x.b + x.len, y.b, y.len); // append y.b to x.b
+  
+  x.len += y.len; // update length
+  free(y.b); // discard copied contents
+  
+  return x;
+}
+
+struct bytes make_track_chunk(track tr)
+{
+  // calculate number of bytes in body
+  uint body_len = 0;
+  for(int i = 0; i < tr.n_evs; i++)
+  {
+    body_len += tr.evs[i].len;
+  }
+  
+  // create vlq
+  struct byte vlq = make_vlq(body_len);
+  
+
+  //
+}
+
 // create an MTrk event, consisting of a delta followed by an event
 struct bytes make_mtrk_event(uint delta, struct bytes ev)
 {

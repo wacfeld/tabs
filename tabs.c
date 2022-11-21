@@ -15,16 +15,19 @@
 
 /* 
    all config lines are of the form
-   <label> <symbol> <amount> <note>
+   <label> <symbol> <amount> <volume> <note>
    e.x.
-   CC l 1 1001
-   (for left crash)
+   CC l 1 100 1001
+   (hit left crash)
    
-   SN w 2 1002
-   (for double stroke on snare)
+   SN w 2 100 1002
+   (double stroke on snare)
 
-   CC r 8 1001
+   CC r 8 100 1001
    (roughly a cymbal roll)
+
+   SN g 1 50 1002
+   (ghost note on snare)
 */
 
 // array of definitions, initialized in read_tabs()
@@ -42,7 +45,7 @@ int linenum = 0;
 
 // process definition
 // example:
-// SN w 2 1001
+// SN w 2 100 1001
 void proc_def(char *s)
 {
   struct def d;
@@ -50,7 +53,7 @@ void proc_def(char *s)
   // read fields from s into d
   char symb[2]; // intermediate storage is needed because %1s has to be used instead of %c, which does not skip whitespace
   char trail[2]; // for detecting trailing non-whitespace characters
-  int n = sscanf(s, "%" ASTRING(LABEL_LEN) "s %1s %d %d %1s", d.lab, symb, &d.amt, &d.note, trail);
+  int n = sscanf(s, "%" ASTRING(LABEL_LEN) "s %1s %d %d %d %1s", d.lab, symb, &d.amt, &d.vol, &d.note, trail);
   d.symb = *symb;
 
   // check for syntax errors

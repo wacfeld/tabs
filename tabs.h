@@ -7,10 +7,11 @@
 
 struct def
 {
-  char lab[LABEL_LEN+1];
-  char symb;
-  int amt;
-  int note;
+  char lab[LABEL_LEN+1]; // label
+  char symb;             // symbol
+  int amt;               // amount
+  int vol;               // volume
+  int note;              // note
 };
 
 void proc_command(char *s);

@@ -25,6 +25,9 @@ int read_config(FILE *stream, struct def *defs)
   
   while(fgets(s, MAX_LINE, stream))
   {
+    if(!strcmp(s, "START\n")) // config over
+      break;
+    
     struct def d;
     
     // read fields from s into d

@@ -13,6 +13,7 @@ struct def
   int note;
 };
 
-int read_config(FILE *stream, struct def *defs);
+void proc_command(char *s);
+void read_tabs(FILE *stream);
 
 #endif

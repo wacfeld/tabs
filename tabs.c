@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
+#include <ctype.h>
 
 #include "tabs.h"
 
@@ -17,47 +19,45 @@
    (roughly a cymbal roll)
 */
 
-// read lines from stream, write definitions into defs, return number of defs
-int read_config(FILE *stream, struct def *defs)
-{
-  char s[MAX_LINE];
-  int i = 0;
-  
-  while(fgets(s, MAX_LINE, stream))
-  {
-    if(!strcmp(s, "START\n")) // config over
-      break;
+// global mutables, initialized in main()
+struct def *defs;
+int ndefs;
 
-    if(*s == '#') // comment, skip
-      continue;
-    
+// process command passed by read_tabs()
+void proc_command(char *s)
+{
+  assert(*s == '!'); // command start
+  
+  if(!strncmp(s+1, "def", 3) && isspace(s[4])) // definition
+  {
     struct def d;
+    
+    // example line:
+    // !def SN w 2 1001
     
     // read fields from s into d
     char symb[2]; // intermediate storage is needed because %1s has to be used instead of %c, which does not skip whitespace
     char trail[2]; // for detecting trailing non-whitespace characters
-    int res = sscanf(s, "%2s %1s %d %d %1s", d.lab, symb, &d.amt, &d.note, trail);
+    int n = sscanf(s+4, "%2s %1s %d %d %1s", d.lab, symb, &d.amt, &d.note, trail);
     d.symb = *symb;
     
     // check for syntax errors
-    if(res == EOF) // whitespace-only line, skip
-      continue;
-    if(res < 4) // not whitespace-only, inadequate input
+    if(n == EOF) // whitespace-only line, skip
+      return;
+    if(n < 4) // not whitespace-only, inadequate input
     {
       fprintf(stderr, "read_config: missing fields; skipping\n%s", s);
-      continue;
+      return;
     }
-    if(res == 5) // trailing non-whitespace characters
+    if(n == 5) // trailing non-whitespace characters
     {
       fprintf(stderr, "read_config: trailing characters; skipping\n%s", s);
-      continue;
+      return;
     }
 
     // append d to defs
-    defs[i++] = d;
+    defs[ndefs++] = d;
   }
-
-  return i;
 }
 
 // read tabs from stream, create midi output
@@ -67,6 +67,13 @@ void read_tabs(FILE *stream)
   
   while(fgets(s, MAX_LINE, stream))
   {
+    if(*s == '#') // comment, skip
+      continue;
     
+    if(*s == '!') // command, pass to proc_command()
+    {
+      proc_command(s);
+      continue;
+    }
   }
 }

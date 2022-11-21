@@ -11,7 +11,7 @@
 #define STRING(x) #x
 #define ASTRING(x) STRING(x)
 
-#define error(fmt, ...) do { fprintf(stderr, "%s: %s: line %d: " fmt, __FILE__, __func__, linenum __VA_OPT__(,) __VA_ARGS__); exit(1); } while(0);
+#define error(fmt, ...) do { fprintf(stderr, "%s: %s: line %d: " fmt, __FILE__, __func__, linenum __VA_OPT__(,) __VA_ARGS__); exit(1); } while(0)
 
 /* 
    all config lines are of the form
@@ -34,11 +34,15 @@
 struct def *defs;
 int ndefs = 0;
 
-// array of variables
-char *varnames[] = {"bpm", "sig"};
-#define NVARS (sizeof(varnames) / sizeof(*varnames))
-int varvals[NVARS];
+// variables
+// these are hard-coded because there aren't many of them and they're all unique
 
+// time signature
+int sig_numer;
+int sig_denom;
+
+// tempo in bars per minute
+int bpm;
 
 // error messages need to know line number
 int linenum = 0;
@@ -60,12 +64,10 @@ void proc_def(char *s)
   if(n < 4) // missing fields
   {
     error("missing fields\n");
-    exit(1);
   }
   if(n == 5) // trailing non-whitespace
   {
     error("trailing characters\n");
-    exit(1);
   }
 
   // append d to defs
@@ -73,47 +75,33 @@ void proc_def(char *s)
   if(ndefs == MAX_DEFS)
   {
     error("maximum allowed definitions (%d) exceeded\n", MAX_DEFS);
-    exit(1);
   }
   defs[ndefs++] = d;
 }
 
 void proc_set(char *s)
 {
-  // variable name and value
-  char name[MAX_LINE];
-  int val = 0;
-  
-  char trail[2]; // for detecting trailing non-whitespace characters
-  
-  int n = sscanf(s, "%s %d %1s", name, &val, trail); // read name and value
-  
-  // check for syntax errors
-  if(n < 2) // missing fields
+  char name[MAX_LINE]; // variable name
+  char trail[2] = {0,0}; // for detecting trailing non-whitespace characters
+
+  if(sscanf(s, "%s", name) == EOF)
+    error("missing variable name\n");
+
+  // go through possible variables case-by-case
+  if(!strcmp(name, "sig")) // time signature
   {
-    error("missing fields\n");
-    exit(1);
-  }
-  if(n == 3) // trailing non-whitespace
-  {
-    error("trailing characters\n");
-    exit(1);
+    if(sscanf(s, "%*s %d %d %1s", &sig_numer, &sig_denom, trail) != 2)
+      error("sig: syntax error\n");
   }
 
-  // check if variable name exists
-  for(int i = 0; i < NVARS; i++)
+  if(!strcmp(name, "bpm")) // tempo
   {
-    if(!strcmp(varnames[i], name)) // found a match
-    {
-      // set value
-      varvals[i] = val;
-      return;
-    }
+    if(scanf(s, "%*s %d %1s", &bpm, trail) != 1)
+      error("bpm: syntax error\n");
   }
 
   // did not find match, print error
-  error("variable does not exist\n");
-  exit(1);
+  error("variable \"%s\" does not exist\n", name);
 }
 
 // process command passed by read_tabs()
@@ -157,7 +145,6 @@ void read_tabs(FILE *in, FILE *out)
     if(s[strlen(s)-1] != '\n') // full line was not read
     {
       error("maximum line length (%d) exceeded\n", MAX_LINE);
-      exit(1);
     }
     
     if(*s == '#') // comment, skip

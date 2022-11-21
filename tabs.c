@@ -11,6 +11,8 @@
 #define STRING(x) #x
 #define ASTRING(x) STRING(x)
 
+#define error(fmt, ...) do { fprintf(stderr, "%s: %s: line %d: " fmt, __FILE__, __func__, linenum __VA_OPT__(,) __VA_ARGS__); exit(1); } while(0);
+
 /* 
    all config lines are of the form
    <label> <symbol> <amount> <note>
@@ -54,12 +56,12 @@ void proc_def(char *s)
   // check for syntax errors
   if(n < 4) // missing fields
   {
-    fprintf(stderr, "%s: line %d: missing fields\n", __func__, linenum);
+    error("missing fields\n");
     exit(1);
   }
   if(n == 5) // trailing non-whitespace
   {
-    fprintf(stderr, "%s: line %d: trailing characters\n", __func__, linenum);
+    error("trailing characters\n");
     exit(1);
   }
 
@@ -67,7 +69,7 @@ void proc_def(char *s)
   assert(defs);
   if(ndefs == MAX_DEFS)
   {
-    fprintf(stderr, "%s: line %d: maximum allowed definitions %d exceeded\n", __func__, linenum, MAX_DEFS);
+    error("maximum allowed definitions (%d) exceeded\n", MAX_DEFS);
     exit(1);
   }
   defs[ndefs++] = d;
@@ -86,12 +88,12 @@ void proc_set(char *s)
   // check for syntax errors
   if(n < 2) // missing fields
   {
-    fprintf(stderr, "%s: line %d: missing fields\n", __func__, linenum);
+    error("missing fields\n");
     exit(1);
   }
   if(n == 3) // trailing non-whitespace
   {
-    fprintf(stderr, "%s: line %d: trailing characters\n", __func__, linenum);
+    error("trailing characters\n");
     exit(1);
   }
 
@@ -107,7 +109,7 @@ void proc_set(char *s)
   }
 
   // did not find match, print error
-  fprintf(stderr, "%s: line %d: variable does not exist\n", __func__, linenum);
+  error("variable does not exist\n");
   exit(1);
 }
 
@@ -144,7 +146,7 @@ void read_tabs(FILE *stream)
     
     if(s[strlen(s)-1] != '\n') // full line was not read
     {
-      fprintf(stderr, "%s: line %d: maximum line length %d exceeded\n", __func__, linenum, MAX_LINE);
+      error("maximum line length (%d) exceeded\n", MAX_LINE);
       exit(1);
     }
     

@@ -160,10 +160,10 @@ struct bytes make_track_chunk(struct track tr, int discard)
 }
 
 // create an MTrk event, consisting of a delta followed by an event
-struct bytes make_mtrk_event(uint delta, struct bytes ev)
+struct bytes make_mtrk_event(uint delta, struct bytes ev, int discard)
 {
   struct bytes vlq = make_vlq(delta);       // convert delta into variable length quantity
-  struct bytes b = byte_cat(vlq, ev, 1, 1);
+  struct bytes b = byte_cat(vlq, ev, 1, discard);
 
   return b;
 }

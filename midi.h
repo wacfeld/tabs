@@ -29,7 +29,7 @@ struct bytes make_header(uint format, uint tracks, uint division);
 struct bytes make_timesig(uchar numer, uchar denom);
 struct bytes make_tempo(uint bpm, uchar numer, uchar denom);
   
-struct bytes make_mtrk_event(uint delta, struct bytes ev);
+struct bytes make_mtrk_event(uint delta, struct bytes ev, int discard);
 struct bytes make_midi_event(enum status stat, uint channel, int ndat, uchar dat1, uchar dat2);
 
 struct bytes make_vlq(uint n);

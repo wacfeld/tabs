@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 
+#include "midi.h"
 #include "tabs.h"
 
 // silly hack to make LABEL_LEN work (otherwise it would have to be hardcoded)
@@ -79,7 +80,7 @@ void proc_def(char *s)
   defs[ndefs++] = d;
 }
 
-void proc_set(char *s)
+void proc_set(char *s, FILE *out)
 {
   char name[MAX_LINE]; // variable name
   char trail[2] = {0,0}; // for detecting trailing non-whitespace characters
@@ -90,14 +91,25 @@ void proc_set(char *s)
   // go through possible variables case-by-case
   if(!strcmp(name, "sig")) // time signature
   {
+    // read numerator and denominator
     if(sscanf(s, "%*s %d %d %1s", &sig_numer, &sig_denom, trail) != 2)
       error("sig: syntax error\n");
+
+    // output time signature change
+    struct bytes ev = make_timesig(sig_numer, sig_denom); // create event
+    struct bytes mtrk_ev = make_mtrk_event(0, ev, 1); // prepend delta
+    put_bytes(out, mtrk_ev, 1); // output
   }
 
   if(!strcmp(name, "bpm")) // tempo
   {
     if(scanf(s, "%*s %d %1s", &bpm, trail) != 1)
       error("bpm: syntax error\n");
+
+    // output tempo change
+    struct bytes ev = make_tempo(bpm, sig_numer, sig_denom); // create event
+    struct bytes mtrk_ev = make_mtrk_event(0, ev, 1); // prepend delta
+    put_bytes(out, mtrk_ev, 1); // output
   }
 
   // did not find match, print error
@@ -105,7 +117,7 @@ void proc_set(char *s)
 }
 
 // process command passed by read_tabs()
-void proc_command(char *s)
+void proc_command(char *s, FILE *out)
 {
   assert(*s == '!'); // command start
   
@@ -116,7 +128,7 @@ void proc_command(char *s)
   
   if(!strncmp(s+1, "set", 3) && isspace(s[4])) // variable assignment
   {
-    proc_set(s+4); // write into varnames, varvals; 
+    proc_set(s+4, out); // write into varnames, varvals; 
   }
 }
 
@@ -125,7 +137,7 @@ void read_tabs(FILE *in, FILE *out)
 {
   // put header
   // format 0, 1 track, _ ticks per quarter note
-  put_bytes(out, make_header(0, 1, TICKS_PER_QUARTER));
+  put_bytes(out, make_header(0, 1, TICKS_PER_QUARTER), 1);
   
   // struct bytes sig = make_timesig(4,4); // default time signature
   // struct bytes tempo = make_tempo(
@@ -152,7 +164,7 @@ void read_tabs(FILE *in, FILE *out)
     
     if(*s == '!') // command, pass to proc_command()
     {
-      proc_command(s);
+      proc_command(s, out);
       continue;
     }
   }

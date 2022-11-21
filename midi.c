@@ -169,19 +169,19 @@ struct bytes make_mtrk_event(uint delta, struct bytes ev)
 }
 
 // create midi message (note off, note on, etc.)
-struct bytes make_midi_event(uint status, uint channel, int ndat, uchar dat1, uchar dat2)
+struct bytes make_midi_event(enum status stat, uint channel, int ndat, uchar dat1, uchar dat2)
 {
-  assert(status <= 0xF);              // at most 4 bits
+  assert(stat <= 0xF);              // at most 4 bits
   assert(channel <= 0xF);             // at most 4 bits
   assert(ndat == 1 || ndat == 2);     // only ever 1 or 2 data bytes
   assert(dat1 <= 0x7F);               // at most 7 bits
   if(ndat == 2) assert(dat2 <= 0x7F); // at most 7 bits
   
-  char *s = malloc(1 + ndat);
-  s[0] = status << 4; // upper 4 bits status
+  uchar *s = malloc(1 + ndat);
+  s[0] = stat << 4; // upper 4 bits status
   s[0] += channel; // lower 4 bits channel
   s[1] = dat1;
-  if(ndat == 2) s[2] = dat[2];
+  if(ndat == 2) s[2] = dat1;
 
   struct bytes b = {1 + ndat, s};
   return b;

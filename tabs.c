@@ -123,18 +123,25 @@ void proc_command(char *s)
   
   if(!strncmp(s+1, "def", 3) && isspace(s[4])) // definition
   {
-    proc_def(s+4);
+    proc_def(s+4); // write into defs
   }
   
   if(!strncmp(s+1, "set", 3) && isspace(s[4])) // variable assignment
   {
-    proc_set(s+4);
+    proc_set(s+4); // write into varnames, varvals; 
   }
 }
 
-// read tabs from stream, create midi output
-void read_tabs(FILE *stream)
+// read tabs from in, write midi output to out
+void read_tabs(FILE *in, FILE *out)
 {
+  // put header
+  // format 0, 1 track, _ ticks per quarter note
+  put_bytes(out, make_header(0, 1, TICKS_PER_QUARTER));
+  
+  // struct bytes sig = make_timesig(4,4); // default time signature
+  // struct bytes tempo = make_tempo(
+  
   // initialize defs
   {
     struct def temp[MAX_DEFS];
@@ -143,7 +150,7 @@ void read_tabs(FILE *stream)
   
   char s[MAX_LINE];
   
-  while(fgets(s, MAX_LINE, stream))
+  while(fgets(s, MAX_LINE, in))
   {
     linenum++;
     

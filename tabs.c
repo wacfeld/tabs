@@ -17,16 +17,16 @@
    all config lines are of the form
    <label> <symbol> <amount> <volume> <note>
    e.x.
-   CC l 1 100 1001
+   CC l 1 100 49
    (hit left crash)
    
-   SN w 2 100 1002
+   SN w 2 100 38
    (double stroke on snare)
 
-   CC r 8 100 1001
+   CC r 8 100 51
    (roughly a cymbal roll)
 
-   SN g 1 50 1002
+   SN g 1 50 38
    (ghost note on snare)
 */
 

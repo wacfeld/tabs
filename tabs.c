@@ -23,7 +23,7 @@ int read_config(FILE *stream, struct def *defs)
   char s[MAX_LINE];
   int i = 0;
   
-  while(fgets(s, MAX_LINE, stdin))
+  while(fgets(s, MAX_LINE, stream))
   {
     struct def d;
     

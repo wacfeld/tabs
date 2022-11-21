@@ -2,6 +2,7 @@
 #include <assert.h>
 
 #include "midi.h"
+#include "tabs.h"
 
 int main()
 {

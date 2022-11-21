@@ -45,6 +45,10 @@ int sig_denom;
 // tempo in bars per minute
 int bpm;
 
+// subdivision of whole note (quarters, eights, etc.) that a single character in the tablature represents
+// e.x. if subdiv == 4 then 'o' is a quarter note, 'w' (double) is an eighth note
+int subdiv;
+
 // error messages need to know line number
 int linenum = 0;
 
@@ -110,6 +114,14 @@ void proc_set(char *s, FILE *out)
     struct bytes ev = make_tempo(bpm, sig_numer, sig_denom); // create event
     struct bytes mtrk_ev = make_mtrk_event(0, ev, 1); // prepend delta
     put_bytes(out, mtrk_ev, 1); // output
+  }
+
+  if(!strcmp(name, "div")) // subdivision
+  {
+    if(scanf(s, "%*s %d %1s", &subdiv, trail) != 1)
+      error("div: syntax error\n");
+    
+    // nothing to output
   }
 
   // did not find match, print error

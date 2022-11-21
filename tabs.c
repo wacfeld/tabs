@@ -27,6 +27,9 @@ int read_config(FILE *stream, struct def *defs)
   {
     if(!strcmp(s, "START\n")) // config over
       break;
+
+    if(*s == '#') // comment, skip
+      continue;
     
     struct def d;
     
@@ -36,19 +39,34 @@ int read_config(FILE *stream, struct def *defs)
     int res = sscanf(s, "%2s %1s %d %d %1s", d.lab, symb, &d.amt, &d.note, trail);
     d.symb = *symb;
     
-    // check for comments and syntax errors
-    if(res >= 1 && d.lab[0] == '#') // comment, skip
-      continue;
+    // check for syntax errors
     if(res == EOF) // whitespace-only line, skip
       continue;
     if(res < 4) // not whitespace-only, inadequate input
-      fprintf(stderr, "read_config: missing fields\n%s", s);
+    {
+      fprintf(stderr, "read_config: missing fields; skipping\n%s", s);
+      continue;
+    }
     if(res == 5) // trailing non-whitespace characters
-      fprintf(stderr, "read_config: trailing characters\n%s", s);
+    {
+      fprintf(stderr, "read_config: trailing characters; skipping\n%s", s);
+      continue;
+    }
 
     // append d to defs
     defs[i++] = d;
   }
 
   return i;
+}
+
+// read tabs from stream, create midi output
+void read_tabs(FILE *stream)
+{
+  char s[MAX_LINE];
+  
+  while(fgets(s, MAX_LINE, stream))
+  {
+    
+  }
 }

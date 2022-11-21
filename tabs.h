@@ -3,6 +3,7 @@
 
 #define LABEL_LEN 2
 #define MAX_DEFS 1000
+#define MAX_LINE 100
 
 struct def
 {
@@ -12,6 +13,6 @@ struct def
   int note;
 };
 
-void read_config(FILE *stream);
+int read_config(FILE *stream, struct def *defs);
 
 #endif

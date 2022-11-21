@@ -25,9 +25,15 @@
    (roughly a cymbal roll)
 */
 
-// global mutables, initialized in read_config()
+// array of definitions, initialized in read_tabs()
 struct def *defs;
 int ndefs = 0;
+
+// array of variables
+char *varnames[] = {"bpm", "sig"};
+#define NVARS (sizeof(varnames) / sizeof(*varnames))
+int varvals[NVARS];
+
 
 // error messages need to know line number
 int linenum = 0;
@@ -46,14 +52,12 @@ void proc_def(char *s)
   d.symb = *symb;
 
   // check for syntax errors
-  if(n == EOF) // whitespace-only line, skip
-    return;
-  if(n < 4) // not whitespace-only, inadequate input
+  if(n < 4) // missing fields
   {
     fprintf(stderr, "%s: line %d: missing fields\n", __func__, linenum);
     exit(1);
   }
-  if(n == 5) // trailing non-whitespace characters
+  if(n == 5) // trailing non-whitespace
   {
     fprintf(stderr, "%s: line %d: trailing characters\n", __func__, linenum);
     exit(1);
@@ -67,7 +71,44 @@ void proc_def(char *s)
     exit(1);
   }
   defs[ndefs++] = d;
+}
 
+void proc_set(char *s)
+{
+  // variable name and value
+  char name[MAX_LINE];
+  int val = 0;
+  
+  char trail[2]; // for detecting trailing non-whitespace characters
+  
+  int n = sscanf(s, "%s %d %1s", name, &val, trail); // read name and value
+  
+  // check for syntax errors
+  if(n < 2) // missing fields
+  {
+    fprintf(stderr, "%s: line %d: missing fields\n", __func__, linenum);
+    exit(1);
+  }
+  if(n == 3) // trailing non-whitespace
+  {
+    fprintf(stderr, "%s: line %d: trailing characters\n", __func__, linenum);
+    exit(1);
+  }
+
+  // check if variable name exists
+  for(int i = 0; i < NVARS; i++)
+  {
+    if(!strcmp(varnames[i], name)) // found a match
+    {
+      // set value
+      varvals[i] = val;
+      return;
+    }
+  }
+
+  // did not find match, print error
+  fprintf(stderr, "%s: line %d: variable does not exist\n", __func__, linenum);
+  exit(1);
 }
 
 // process command passed by read_tabs()
@@ -78,6 +119,11 @@ void proc_command(char *s)
   if(!strncmp(s+1, "def", 3) && isspace(s[4])) // definition
   {
     proc_def(s+4);
+  }
+  
+  if(!strncmp(s+1, "set", 3) && isspace(s[4])) // variable assignment
+  {
+    proc_set(s+4);
   }
 }
 

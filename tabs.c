@@ -29,6 +29,9 @@
 struct def *defs;
 int ndefs = 0;
 
+// error messages need to know line number
+int linenum = 0;
+
 // process command passed by read_tabs()
 void proc_command(char *s)
 {
@@ -52,17 +55,22 @@ void proc_command(char *s)
       return;
     if(n < 4) // not whitespace-only, inadequate input
     {
-      fprintf(stderr, "%s: missing fields\n%s", __func__, s);
+      fprintf(stderr, "%s: line %d: missing fields\n", __func__, linenum);
       exit(1);
     }
     if(n == 5) // trailing non-whitespace characters
     {
-      fprintf(stderr, "%s: trailing characters\n%s", __func__, s);
+      fprintf(stderr, "%s: line %d: trailing characters\n", __func__, linenum);
       exit(1);
     }
 
     // append d to defs
     assert(defs);
+    if(ndefs == MAX_DEFS)
+    {
+      fprintf(stderr, "%s: line %d: maximum allowed definitions %d exceeded\n", __func__, linenum, MAX_DEFS);
+      exit(1);
+    }
     defs[ndefs++] = d;
   }
 }
@@ -80,9 +88,11 @@ void read_tabs(FILE *stream)
   
   while(fgets(s, MAX_LINE, stream))
   {
+    linenum++;
+    
     if(s[strlen(s)-1] != '\n') // full line was not read
     {
-      fprintf(stderr, "%s: maximum line length %d exceeded\n%s", __func__, MAX_LINE, s);
+      fprintf(stderr, "%s: line %d: maximum line length %d exceeded\n", __func__, linenum, MAX_LINE);
       exit(1);
     }
     

@@ -28,6 +28,7 @@ struct bytes make_timesig(uchar numer, uchar denom);
 struct bytes make_tempo(uint bpm, uchar numer, uchar denom);
   
 struct bytes make_mtrk_event(uint delta, struct bytes ev);
+struct bytes make_midi_event(uint status, uint channel, int ndat, uchar dat1, uchar dat2)
 
 struct bytes make_vlq(uint n);
 #endif

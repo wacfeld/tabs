@@ -5,6 +5,11 @@
 
 #include "tabs.h"
 
+// silly hack to make LABEL_LEN work (otherwise it would have to be hardcoded)
+// https://stackoverflow.com/questions/70815044/how-to-make-macro-replacement-text-into-a-string-in-c-c
+#define STRING(x) #x
+#define ASTRING(x) STRING(x)
+
 /* 
    all config lines are of the form
    <label> <symbol> <amount> <note>
@@ -19,9 +24,9 @@
    (roughly a cymbal roll)
 */
 
-// global mutables, initialized in main()
+// global mutables, initialized in read_config()
 struct def *defs;
-int ndefs;
+int ndefs = 0;
 
 // process command passed by read_tabs()
 void proc_command(char *s)
@@ -38,7 +43,7 @@ void proc_command(char *s)
     // read fields from s into d
     char symb[2]; // intermediate storage is needed because %1s has to be used instead of %c, which does not skip whitespace
     char trail[2]; // for detecting trailing non-whitespace characters
-    int n = sscanf(s+4, "%2s %1s %d %d %1s", d.lab, symb, &d.amt, &d.note, trail);
+    int n = sscanf(s+4, "%" ASTRING(LABEL_LEN) "s %1s %d %d %1s", d.lab, symb, &d.amt, &d.note, trail);
     d.symb = *symb;
     
     // check for syntax errors
@@ -56,6 +61,7 @@ void proc_command(char *s)
     }
 
     // append d to defs
+    assert(defs);
     defs[ndefs++] = d;
   }
 }
@@ -63,6 +69,12 @@ void proc_command(char *s)
 // read tabs from stream, create midi output
 void read_tabs(FILE *stream)
 {
+  // initialize defs
+  {
+    struct defs temp[MAX_DEFS];
+    defs = temp;
+  }
+  
   char s[MAX_LINE];
   
   while(fgets(s, MAX_LINE, stream))
@@ -76,4 +88,7 @@ void read_tabs(FILE *stream)
       continue;
     }
   }
+
+  // uninitialize defs
+  defs = 0;
 }

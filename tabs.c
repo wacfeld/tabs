@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdlib.h>
 
 #include "tabs.h"
 
@@ -51,13 +52,13 @@ void proc_command(char *s)
       return;
     if(n < 4) // not whitespace-only, inadequate input
     {
-      fprintf(stderr, "read_config: missing fields; skipping\n%s", s);
-      return;
+      fprintf(stderr, "%s: missing fields\n%s", __func__, s);
+      exit(1);
     }
     if(n == 5) // trailing non-whitespace characters
     {
-      fprintf(stderr, "read_config: trailing characters; skipping\n%s", s);
-      return;
+      fprintf(stderr, "%s: trailing characters\n%s", __func__, s);
+      exit(1);
     }
 
     // append d to defs
@@ -71,7 +72,7 @@ void read_tabs(FILE *stream)
 {
   // initialize defs
   {
-    struct defs temp[MAX_DEFS];
+    struct def temp[MAX_DEFS];
     defs = temp;
   }
   
@@ -79,6 +80,12 @@ void read_tabs(FILE *stream)
   
   while(fgets(s, MAX_LINE, stream))
   {
+    if(s[strlen(s)-1] != '\n') // full line was not read
+    {
+      fprintf(stderr, "%s: maximum line length %d exceeded\n%s", __func__, MAX_LINE, s);
+      exit(1);
+    }
+    
     if(*s == '#') // comment, skip
       continue;
     

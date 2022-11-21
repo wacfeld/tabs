@@ -6,11 +6,11 @@
 
 #include "midi.h"
 
-void put_bytes(struct bytes b, int discard)
+void put_bytes(FILE *stream, struct bytes b, int discard)
 {
   for(int i = 0; i < b.len; i++)
   {
-    putchar(b.b[i]);
+    fputc(b.b[i], stream);
   }
 
   if(discard) // no longer needed, call free()

@@ -18,7 +18,7 @@ struct track
 
 enum status {NOTE_OFF=8, NOTE_ON=9,};
 
-void put_bytes(struct bytes b, int discard);
+void put_bytes(FILE *stream, struct bytes b, int discard);
 void write_bytes(uchar *s, int n, ...);
 struct bytes make_bytes(int n, ...);
 

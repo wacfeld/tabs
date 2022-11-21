@@ -8,7 +8,7 @@ int main()
   assert(sizeof(int) >= 4);
   assert(sizeof(long) >= 8);
 
-  put_bytes(make_header(0, 1, 256), 1);
+  put_bytes(stdout, make_header(0, 1, 256), 1);
 
   struct bytes sig = make_timesig(2, 4);
   struct bytes tempo = make_tempo(80, 2, 4);
@@ -25,5 +25,5 @@ int main()
   struct track tr = {5, evs};
   struct bytes chunk = make_track_chunk(tr, 0);
   
-  put_bytes(chunk, 1);
+  put_bytes(stdout, chunk, 1);
 }

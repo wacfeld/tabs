@@ -32,6 +32,44 @@ int ndefs = 0;
 // error messages need to know line number
 int linenum = 0;
 
+// process definition
+// example:
+// SN w 2 1001
+void proc_def(char *s)
+{
+  struct def d;
+
+  // read fields from s into d
+  char symb[2]; // intermediate storage is needed because %1s has to be used instead of %c, which does not skip whitespace
+  char trail[2]; // for detecting trailing non-whitespace characters
+  int n = sscanf(s, "%" ASTRING(LABEL_LEN) "s %1s %d %d %1s", d.lab, symb, &d.amt, &d.note, trail);
+  d.symb = *symb;
+
+  // check for syntax errors
+  if(n == EOF) // whitespace-only line, skip
+    return;
+  if(n < 4) // not whitespace-only, inadequate input
+  {
+    fprintf(stderr, "%s: line %d: missing fields\n", __func__, linenum);
+    exit(1);
+  }
+  if(n == 5) // trailing non-whitespace characters
+  {
+    fprintf(stderr, "%s: line %d: trailing characters\n", __func__, linenum);
+    exit(1);
+  }
+
+  // append d to defs
+  assert(defs);
+  if(ndefs == MAX_DEFS)
+  {
+    fprintf(stderr, "%s: line %d: maximum allowed definitions %d exceeded\n", __func__, linenum, MAX_DEFS);
+    exit(1);
+  }
+  defs[ndefs++] = d;
+
+}
+
 // process command passed by read_tabs()
 void proc_command(char *s)
 {
@@ -39,39 +77,7 @@ void proc_command(char *s)
   
   if(!strncmp(s+1, "def", 3) && isspace(s[4])) // definition
   {
-    struct def d;
-    
-    // example line:
-    // !def SN w 2 1001
-    
-    // read fields from s into d
-    char symb[2]; // intermediate storage is needed because %1s has to be used instead of %c, which does not skip whitespace
-    char trail[2]; // for detecting trailing non-whitespace characters
-    int n = sscanf(s+4, "%" ASTRING(LABEL_LEN) "s %1s %d %d %1s", d.lab, symb, &d.amt, &d.note, trail);
-    d.symb = *symb;
-    
-    // check for syntax errors
-    if(n == EOF) // whitespace-only line, skip
-      return;
-    if(n < 4) // not whitespace-only, inadequate input
-    {
-      fprintf(stderr, "%s: line %d: missing fields\n", __func__, linenum);
-      exit(1);
-    }
-    if(n == 5) // trailing non-whitespace characters
-    {
-      fprintf(stderr, "%s: line %d: trailing characters\n", __func__, linenum);
-      exit(1);
-    }
-
-    // append d to defs
-    assert(defs);
-    if(ndefs == MAX_DEFS)
-    {
-      fprintf(stderr, "%s: line %d: maximum allowed definitions %d exceeded\n", __func__, linenum, MAX_DEFS);
-      exit(1);
-    }
-    defs[ndefs++] = d;
+    proc_def(s+4);
   }
 }
 

@@ -39,15 +39,15 @@ int ndefs = 0;
 // these are hard-coded because there aren't many of them and they're all unique
 
 // time signature
-int sig_numer;
-int sig_denom;
+uint sig_numer;
+uint sig_denom;
 
 // tempo in bars per minute
-int bpm;
+uint bpm;
 
 // subdivision of whole note (quarters, eights, etc.) that a single character in the tablature represents
 // e.x. if subdiv == 4 then 'o' is a quarter note, 'w' (double) is an eighth note
-int subdiv;
+uint subdiv;
 
 // error messages need to know line number
 int linenum = 0;
@@ -96,8 +96,24 @@ void proc_set(char *s, FILE *out)
   if(!strcmp(name, "sig")) // time signature
   {
     // read numerator and denominator
-    if(sscanf(s, "%*s %d %d %1s", &sig_numer, &sig_denom, trail) != 2)
+    if(sscanf(s, "%*s %u %u %1s", &sig_numer, &sig_denom, trail) != 2)
       error("sig: syntax error\n");
+
+    // check validity of time signature
+    {
+      if(!sig_numer)
+        error("sig: numerator 0\n");
+      if(!sig_denom)
+        error("sig: denominator 0\n");
+      
+      uint temp = sig_denom;
+      while(temp != 1)
+      {
+        if(temp % 2 != 0)
+          error("sig: denominator not power of 2\n");
+        temp /= 2;
+      }
+    }
 
     // output time signature change
     struct bytes ev = make_timesig(sig_numer, sig_denom); // create event
@@ -107,8 +123,12 @@ void proc_set(char *s, FILE *out)
 
   if(!strcmp(name, "bpm")) // tempo
   {
-    if(scanf(s, "%*s %d %1s", &bpm, trail) != 1)
+    if(scanf(s, "%*s %u %1s", &bpm, trail) != 1)
       error("bpm: syntax error\n");
+
+    // check tempo is valid
+    if(tempo == 0)
+      error("bpm: tempo is 0\n");
 
     // output tempo change
     struct bytes ev = make_tempo(bpm, sig_numer, sig_denom); // create event
@@ -118,13 +138,25 @@ void proc_set(char *s, FILE *out)
 
   if(!strcmp(name, "div")) // subdivision
   {
-    if(scanf(s, "%*s %d %1s", &subdiv, trail) != 1)
+    if(scanf(s, "%*s %u %1s", &subdiv, trail) != 1)
       error("div: syntax error\n");
-    
-    // nothing to output
+
+    // check subdivision is valid
+    {
+      if(!subdiv)
+        error("div: subdivision is 0\n");
+      
+      uint temp = subdiv;
+      while(temp != 1)
+      {
+        if(temp % 2 != 0)
+          error("div: subdivision not power of 2\n");
+        temp /= 2;
+      }
+    }
   }
 
-  // did not find match, print error
+  // no such variable, print error
   error("variable \"%s\" does not exist\n", name);
 }
 

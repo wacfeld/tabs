@@ -37,7 +37,7 @@ int ndefs = 0;
 int maxdefs = 4;
 
 // array of parts at any given time, initialized in read_tabs()
-char (*parts)[MAXLINE] = NULL;
+char (*parts)[MAX_LINE] = NULL;
 int nparts = 0;
 int maxparts = 4;
 
@@ -185,7 +185,7 @@ void proc_command(char *s, FILE *out)
 }
 
 // return true if line s is all whitespace
-void isblank(char *s)
+int blankline(char *s)
 {
   int blank = 1;
   
@@ -198,13 +198,16 @@ void isblank(char *s)
   return blank;
 }
 
-// process one line (command comment, blank) or multiple lines of tablature at once
-void proc_line(char *s, FILE *in, FILE *out)
+// process parts[0] (could be command comment, blank, or tablature)
+// if tablature, read the following lines into parts[] as well
+void proc_line(FILE *in, FILE *out)
 {
+  char *s = parts[0];
+  
   if(s[strlen(s)-1] != '\n') // full line was not read
     error("maximum line length (%d) exceeded\n", MAX_LINE);
 
-  if(isblank(s)) // blank line, skip
+  if(blankline(s)) // blank line, skip
     return;
 
   if(*s == '#') // comment, skip
@@ -219,6 +222,7 @@ void proc_line(char *s, FILE *in, FILE *out)
   // if none of the above, it's the start of a block of tablature
 
   // read parts until blank line
+  nparts = 0;
   
 }
 
@@ -234,17 +238,15 @@ void read_tabs(FILE *in, FILE *out)
   
   // allocate defs, parts
   defs = malloc(sizeof(struct def) * maxdefs);
-  parts = malloc(sizeof(char[MAXLINE]) * maxparts);
+  parts = malloc(sizeof(char[MAX_LINE]) * maxparts);
   assert(defs);
   assert(parts);
 
-  char s[MAX_LINE]; // holds current line
-  
   // process lines
-  while(fgets(s, MAX_LINE, in))
+  while(fgets(parts[0], MAX_LINE, in)) // read into parts[0], so that if it's the start of a block we don't have to strcpy it over
   {
     linenum++;
-    proc_line(s, in, out);
+    proc_line(in, out);
   }
 
   free(defs);

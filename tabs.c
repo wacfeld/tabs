@@ -56,7 +56,7 @@ uint bpm;
 uint subdiv;
 
 // error messages need to know line number
-int linenum = 0;
+int linenum = 1;
 
 // process definition
 // example:
@@ -198,32 +198,34 @@ int blankline(char *s)
   return blank;
 }
 
-// process parts[0] (could be command comment, blank, or tablature)
+// read and process one line (could be command comment, blank, or tablature)
 // if tablature, read the following lines into parts[] as well
-void proc_line(FILE *in, FILE *out)
+// return 1 if tablature, -1 on EOF, 0 otherwise
+int proc_line(FILE *in, FILE *out)
 {
-  char *s = parts[0];
+  char *s = parts[nparts];
+  
+  if(!fgets(s, MAX_LINE, in)) // read 1 line
+    return -1; // return -1 on EOF
   
   if(s[strlen(s)-1] != '\n') // full line was not read
     error("maximum line length (%d) exceeded\n", MAX_LINE);
 
   if(blankline(s)) // blank line, skip
-    return;
+    return 0;
 
   if(*s == '#') // comment, skip
-    return;
+    return 0;
 
   if(*s == '!') // command, pass to proc_command()
   {
     proc_command(s, out);
-    return;
+    return 0;
   }
 
-  // if none of the above, it's the start of a block of tablature
-
-  // read parts until blank line
-  nparts = 0;
-  
+  // if none of the above, it's a part: increment nparts and return 1
+  nparts++;
+  return 1;
 }
 
 // read tabs from in, write midi output to out
@@ -243,10 +245,9 @@ void read_tabs(FILE *in, FILE *out)
   assert(parts);
 
   // process lines
-  while(fgets(parts[0], MAX_LINE, in)) // read into parts[0], so that if it's the start of a block we don't have to strcpy it over
+  while(proc_line(in, out) != EOF) // read into parts[0], so that if it's the start of a block we don't have to strcpy it over
   {
     linenum++;
-    proc_line(in, out);
   }
 
   free(defs);

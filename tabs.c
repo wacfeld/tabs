@@ -176,23 +176,27 @@ void proc_command(char *s, FILE *out)
   }
 }
 
+// return true if line s is all whitespace
+void isblank(char *s)
+{
+  int blank = 1;
+  
+  for(int i = 0; i < strlen(s); i++)
+  {
+    if(!isspace(s[0]))
+      blank = 0;
+  }
+
+  return blank;
+}
+
 void proc_line(char *s, FILE *in, FILE *out)
 {
   if(s[strlen(s)-1] != '\n') // full line was not read
     error("maximum line length (%d) exceeded\n", MAX_LINE);
 
-  // check if line is all whitespace
-  {
-    int blank = 1;
-    for(int i = 0; i < strlen(s); i++)
-    {
-      if(!isspace(s[0]))
-        blank = 0;
-    }
-
-    if(blank) // blank line, skip
-      return;
-  }
+  if(isblank(s)) // blank line, skip
+    return;
 
   if(*s == '#') // comment, skip
     return;
@@ -202,6 +206,14 @@ void proc_line(char *s, FILE *in, FILE *out)
     proc_command(s, out);
     return;
   }
+
+  // if none of the above, it's the start of a block of tablature
+
+  // allocate space for parts
+  int nparts = 4; // 4 is a reasonable starting point (e.x. base, snare, ride, hi hat)
+  char (*parts)[MAXLINE] = malloc(nparts * sizeof(char [MAXLINE]));
+
+  // read parts until blank line
 }
 
 // read tabs from in, write midi output to out

@@ -127,8 +127,8 @@ void proc_set(char *s, FILE *out)
       error("bpm: syntax error\n");
 
     // check tempo is valid
-    if(tempo == 0)
-      error("bpm: tempo is 0\n");
+    if(bpm == 0)
+      error("bpm: bpm is 0\n");
 
     // output tempo change
     struct bytes ev = make_tempo(bpm, sig_numer, sig_denom); // create event
@@ -176,6 +176,34 @@ void proc_command(char *s, FILE *out)
   }
 }
 
+void proc_line(char *s, FILE *in, FILE *out)
+{
+  if(s[strlen(s)-1] != '\n') // full line was not read
+    error("maximum line length (%d) exceeded\n", MAX_LINE);
+
+  // check if line is all whitespace
+  {
+    int blank = 1;
+    for(int i = 0; i < strlen(s); i++)
+    {
+      if(!isspace(s[0]))
+        blank = 0;
+    }
+
+    if(blank) // blank line, skip
+      return;
+  }
+
+  if(*s == '#') // comment, skip
+    return;
+
+  if(*s == '!') // command, pass to proc_command()
+  {
+    proc_command(s, out);
+    return;
+  }
+}
+
 // read tabs from in, write midi output to out
 void read_tabs(FILE *in, FILE *out)
 {
@@ -194,23 +222,11 @@ void read_tabs(FILE *in, FILE *out)
   
   char s[MAX_LINE];
   
+  // process lines
   while(fgets(s, MAX_LINE, in))
   {
     linenum++;
-    
-    if(s[strlen(s)-1] != '\n') // full line was not read
-    {
-      error("maximum line length (%d) exceeded\n", MAX_LINE);
-    }
-    
-    if(*s == '#') // comment, skip
-      continue;
-    
-    if(*s == '!') // command, pass to proc_command()
-    {
-      proc_command(s, out);
-      continue;
-    }
+    proc_line(s, in, out);
   }
 
   // uninitialize defs

@@ -26,6 +26,7 @@ struct bytes make_bytes(int n, ...)
   va_start(ap, n);
 
   uchar *s = malloc(n);
+  assert(s);
   
   for(int i = 0; i < n; i++)
   {
@@ -58,6 +59,7 @@ struct bytes make_header(uint format, uint tracks, uint division)
   assert(division <= 0x7FFF); // bit 15 must be clear
   
   uchar *head = malloc(14);
+  assert(head);
   write_bytes(head, 8, 'M', 'T', 'h', 'd', 0, 0, 0, 6);
   
   head[8] = format >> 8;
@@ -75,6 +77,7 @@ struct bytes make_header(uint format, uint tracks, uint division)
 struct bytes make_vlq(uint n)
 {
   uchar *vlq = malloc(4); // vlqs are at most 4 bytes
+  assert(vlq);
   
   // largest division allowed is 7 Fs
   assert(n <= 0x0FFFFFFF);
@@ -136,6 +139,7 @@ struct bytes make_track_chunk(struct track tr, int discard)
   
   // write chunk type and length
   uchar *chunk = malloc(8 + body_len);
+  assert(chunk);
   write_bytes(chunk, 4, 'M', 'T', 'r', 'k');
   chunk[4] = (body_len >> 24) % 0x100;
   chunk[5] = (body_len >> 16) % 0x100;
@@ -178,6 +182,7 @@ struct bytes make_midi_event(enum status stat, uint channel, int ndat, uchar dat
   if(ndat == 2) assert(dat2 <= 0x7F); // at most 7 bits
   
   uchar *s = malloc(1 + ndat);
+  assert(s);
   s[0] = stat << 4; // upper 4 bits status
   s[0] += channel; // lower 4 bits channel
   s[1] = dat1;
@@ -204,6 +209,7 @@ struct bytes make_timesig(uchar numer, uchar denom)
 
   // time sigs event is 7 bytes
   uchar *sig = malloc(7);
+  assert(sig);
   write_bytes(sig, 7, 0xFF, 0x58, 0x04, numer, denom_lg, 24, 8);
   
   struct bytes b = {7, sig};
@@ -220,6 +226,7 @@ struct bytes make_tempo(uint bpm, uchar numer, uchar denom)
   assert(bpm);
   
   uchar *tempo = malloc(6); // tempo event is 6 bytes
+  assert(tempo);
   write_bytes(tempo, 3, 0xFF, 0x51, 0x03);
   
   // calculate microseconds per quarter note:

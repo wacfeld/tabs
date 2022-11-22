@@ -41,6 +41,8 @@ char (*parts)[MAX_LINE] = NULL;
 int nparts = 0;
 int maxparts = 4;
 
+struct track track = {0, NULL};
+
 // variables
 // these are hard-coded because there aren't many of them and they're all unique
 
@@ -237,6 +239,8 @@ void read_tabs(FILE *in, FILE *out)
   
   // struct bytes sig = make_timesig(4,4); // default time signature
   // struct bytes tempo = make_tempo(
+
+  // TODO initialize track, append to track instead of call put_bytes()
   
   // allocate defs, parts
   defs = malloc(sizeof(struct def) * maxdefs);
@@ -245,10 +249,18 @@ void read_tabs(FILE *in, FILE *out)
   assert(parts);
 
   // process lines
-  while(proc_line(in, out) != EOF) // read into parts[0], so that if it's the start of a block we don't have to strcpy it over
+  int status;
+  while((status = proc_line(in, out)) != EOF) // process lines until EOF
   {
+    if(status == 1)
+    {
+      
+    }
+    
     linenum++;
   }
+
+  // TODO output end of track, calculate track length, etc.
 
   free(defs);
   defs = 0;

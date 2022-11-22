@@ -34,6 +34,12 @@
 // array of definitions, initialized in read_tabs()
 struct def *defs;
 int ndefs = 0;
+int maxdefs = 4;
+
+// array of parts at any given time, initialized in read_tabs()
+char (*parts)[MAXLINE] = NULL;
+int nparts = 0;
+int maxparts = 4;
 
 // variables
 // these are hard-coded because there aren't many of them and they're all unique
@@ -77,9 +83,11 @@ void proc_def(char *s)
 
   // append d to defs
   assert(defs);
-  if(ndefs == MAX_DEFS)
+  if(ndefs == maxdefs) // expand if necessary
   {
-    error("maximum allowed definitions (%d) exceeded\n", MAX_DEFS);
+    maxdefs *= 2;
+    defs = realloc(defs, sizeof(struct def) * maxdefs);
+    assert(defs);
   }
   defs[ndefs++] = d;
 }
@@ -190,6 +198,7 @@ void isblank(char *s)
   return blank;
 }
 
+// process one line (command comment, blank) or multiple lines of tablature at once
 void proc_line(char *s, FILE *in, FILE *out)
 {
   if(s[strlen(s)-1] != '\n') // full line was not read
@@ -209,11 +218,8 @@ void proc_line(char *s, FILE *in, FILE *out)
 
   // if none of the above, it's the start of a block of tablature
 
-  // allocate space for parts
-  int nparts = 4; // 4 is a reasonable starting point (e.x. base, snare, ride, hi hat)
-  char (*parts)[MAXLINE] = malloc(nparts * sizeof(char [MAXLINE]));
-
   // read parts until blank line
+  
 }
 
 // read tabs from in, write midi output to out
@@ -226,13 +232,13 @@ void read_tabs(FILE *in, FILE *out)
   // struct bytes sig = make_timesig(4,4); // default time signature
   // struct bytes tempo = make_tempo(
   
-  // initialize defs
-  {
-    struct def temp[MAX_DEFS];
-    defs = temp;
-  }
-  
-  char s[MAX_LINE];
+  // allocate defs, parts
+  defs = malloc(sizeof(struct def) * maxdefs);
+  parts = malloc(sizeof(char[MAXLINE]) * maxparts);
+  assert(defs);
+  assert(parts);
+
+  char s[MAX_LINE]; // holds current line
   
   // process lines
   while(fgets(s, MAX_LINE, in))
@@ -241,6 +247,8 @@ void read_tabs(FILE *in, FILE *out)
     proc_line(s, in, out);
   }
 
-  // uninitialize defs
+  free(defs);
   defs = 0;
+  free(parts);
+  parts = 0;
 }

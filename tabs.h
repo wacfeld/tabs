@@ -7,6 +7,8 @@
 
 #define TICKS_PER_QUARTER 256
 
+#define REST '-'
+
 struct def
 {
   char lab[LABEL_LEN+1]; // label
@@ -16,7 +18,6 @@ struct def
   int note;              // note
 };
 
-void proc_command(char *s);
 void read_tabs(FILE *in, FILE *out);
 
 #endif

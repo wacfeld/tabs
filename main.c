@@ -24,7 +24,7 @@ int main()
   
   struct bytes evs[] = {make_mtrk_event(0, sig), make_mtrk_event(0, tempo), make_mtrk_event(0, note), make_mtrk_event(0, off), make_mtrk_event(0, end)};
   
-  struct track tr = {5, evs};
+  struct track tr = {5, -1, evs};
   struct bytes chunk = make_track_chunk(tr);
   
   put_bytes(stdout, chunk);

@@ -117,7 +117,7 @@ struct bytes make_track_chunk(struct track tr)
 {
   // calculate number of bytes in body
   unsigned long body_len = 0;
-  for(int i = 0; i < tr.n_evs; i++)
+  for(int i = 0; i < tr.n; i++)
   {
     body_len += tr.evs[i].len;
   }
@@ -136,7 +136,7 @@ struct bytes make_track_chunk(struct track tr)
   struct bytes b = {8, chunk};
   
   // append tracks
-  for(int i = 0; i < tr.n_evs; i++)
+  for(int i = 0; i < tr.n; i++)
   {
     b = byte_cat(b, tr.evs[i]); // do not realloc(), do free()
   }

@@ -12,7 +12,8 @@ struct bytes
 
 struct track
 {
-  int n_evs;
+  int n;
+  int max;
   struct bytes *evs;
 };
 

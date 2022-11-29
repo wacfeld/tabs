@@ -36,13 +36,7 @@ struct def *defs;
 int ndefs = 0;
 int maxdefs = 4;
 
-// array of parts at any given time, initialized in read_tabs()
-char (*parts)[MAX_LINE] = NULL;
-int nparts = 0;
-int maxparts = 4;
-
-struct track tr = {0, NULL};
-int trmax = 8;
+struct track main_tr = {0, 8, NULL};
 
 // variables
 // these are hard-coded because there aren't many of them and they're all unique
@@ -60,16 +54,19 @@ uint subdiv;
 
 // error messages need to know line number
 int linenum = 1;
+int time = 0; // time in ticks since start of piece, used to calculate deltas
+int inbar = 0; // whether we're currently processing a bar or not
 
-void track_app(struct bytes b)
+// append bytes b to track tr
+void track_app(struct track tr, struct bytes b)
 {
-  if(tr.n_evs == trmax)
+  if(tr.n == tr.max)
   {
-    trmax *= 2;
-    tr.evs = realloc(tr.evs, sizeof(struct bytes) * trmax);
+    tr.max *= 2;
+    tr.evs = realloc(tr.evs, sizeof(struct bytes) * tr.max);
   }
   
-  tr.evs[tr.n_evs++] = b;
+  tr.evs[tr.n++] = b;
 }
 
 // process definition
@@ -140,7 +137,7 @@ void proc_set(char *s)
     // output time signature change
     struct bytes ev = make_timesig(sig_numer, sig_denom); // create event
     struct bytes mtrk_ev = make_mtrk_event(0, ev); // prepend delta
-    track_app(mtrk_ev); // output
+    track_app(main_tr, mtrk_ev); // output
   }
 
   if(!strcmp(name, "bpm")) // tempo
@@ -155,7 +152,7 @@ void proc_set(char *s)
     // output tempo change
     struct bytes ev = make_tempo(bpm, sig_numer, sig_denom); // create event
     struct bytes mtrk_ev = make_mtrk_event(0, ev); // prepend delta
-    track_app(mtrk_ev); // output
+    track_app(main_tr, mtrk_ev); // output
   }
 
   if(!strcmp(name, "div")) // subdivision
@@ -215,10 +212,8 @@ int blankline(char *s)
 // read and process one line (could be command comment, blank, or tablature)
 // if tablature, read the following lines into parts[] as well
 // return 1 if tablature, -1 on EOF, 0 otherwise
-int proc_line(FILE *in)
+int proc_line(FILE *in, char *s)
 {
-  char *s = parts[nparts];
-  
   if(!fgets(s, MAX_LINE, in)) // read 1 line
     return -1; // return -1 on EOF
   
@@ -237,8 +232,7 @@ int proc_line(FILE *in)
     return 0;
   }
 
-  // if none of the above, it's a part: increment nparts and return 1
-  nparts++;
+  // if none of the above, it's a part; return 1 and let caller process s
   return 1;
 }
 
@@ -246,28 +240,32 @@ int proc_line(FILE *in)
 void read_tabs(FILE *in, FILE *out)
 {
   // put header
-  // format 0, 1 track, _ ticks per quarter note
-  track_app(make_header(0, 1, TICKS_PER_QUARTER));
+  // format 0; 1 track; _ ticks per quarter note
+  track_app(main_tr, make_header(0, 1, TICKS_PER_QUARTER));
   
   // struct bytes sig = make_timesig(4,4); // default time signature
   // struct bytes tempo = make_tempo(
 
   // TODO initialize track, append to track instead of call put_bytes()
-  tr.evs = malloc(sizeof(struct bytes) * trmax);
+  main_tr.evs = malloc(sizeof(struct bytes) * main_tr.max);
   
-  // allocate defs, parts
+  // allocate defs
   defs = malloc(sizeof(struct def) * maxdefs);
-  parts = malloc(sizeof(char[MAX_LINE]) * maxparts);
   assert(defs);
-  assert(parts);
 
   // process lines
   int status;
-  while((status = proc_line(in)) != EOF) // process lines until EOF
+  char s[MAX_LINE];
+  while((status = proc_line(in, s)) != -1) // process lines until EOF
   {
-    if(status == 1)
+    if(status == 1) // tablature
     {
-      
+      if(!inbar) // start of bar; initialize
+      {
+        inbar = 1;
+        
+        struct track bar = {0,8,NULL};
+      }
     }
     
     linenum++;
@@ -277,6 +275,4 @@ void read_tabs(FILE *in, FILE *out)
 
   free(defs);
   defs = 0;
-  free(parts);
-  parts = 0;
 }

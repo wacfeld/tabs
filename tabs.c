@@ -61,7 +61,7 @@ uint subdiv;
 // error messages need to know line number
 int linenum = 1;
 
-void track_app(struct bytes b, int discard)
+void track_app(struct bytes b)
 {
   if(tr.n_evs == trmax)
   {
@@ -70,9 +70,6 @@ void track_app(struct bytes b, int discard)
   }
   
   tr.evs[tr.n_evs++] = b;
-  
-  if(discard)
-    free(b.b);
 }
 
 // process definition
@@ -109,7 +106,7 @@ void proc_def(char *s)
   defs[ndefs++] = d;
 }
 
-void proc_set(char *s, FILE *out)
+void proc_set(char *s)
 {
   char name[MAX_LINE]; // variable name
   char trail[2] = {0,0}; // for detecting trailing non-whitespace characters
@@ -142,8 +139,8 @@ void proc_set(char *s, FILE *out)
 
     // output time signature change
     struct bytes ev = make_timesig(sig_numer, sig_denom); // create event
-    struct bytes mtrk_ev = make_mtrk_event(0, ev, 1); // prepend delta
-    put_bytes(out, mtrk_ev, 1); // output
+    struct bytes mtrk_ev = make_mtrk_event(0, ev); // prepend delta
+    track_app(mtrk_ev); // output
   }
 
   if(!strcmp(name, "bpm")) // tempo
@@ -157,8 +154,8 @@ void proc_set(char *s, FILE *out)
 
     // output tempo change
     struct bytes ev = make_tempo(bpm, sig_numer, sig_denom); // create event
-    struct bytes mtrk_ev = make_mtrk_event(0, ev, 1); // prepend delta
-    put_bytes(out, mtrk_ev, 1); // output
+    struct bytes mtrk_ev = make_mtrk_event(0, ev); // prepend delta
+    track_app(mtrk_ev); // output
   }
 
   if(!strcmp(name, "div")) // subdivision
@@ -186,7 +183,7 @@ void proc_set(char *s, FILE *out)
 }
 
 // process command passed by read_tabs()
-void proc_command(char *s, FILE *out)
+void proc_command(char *s)
 {
   assert(*s == '!'); // command start
   
@@ -197,7 +194,7 @@ void proc_command(char *s, FILE *out)
   
   if(!strncmp(s+1, "set", 3) && isspace(s[4])) // variable assignment
   {
-    proc_set(s+4, out); // write into varnames, varvals; 
+    proc_set(s+4); // write into varnames, varvals; 
   }
 }
 
@@ -218,7 +215,7 @@ int blankline(char *s)
 // read and process one line (could be command comment, blank, or tablature)
 // if tablature, read the following lines into parts[] as well
 // return 1 if tablature, -1 on EOF, 0 otherwise
-int proc_line(FILE *in, FILE *out)
+int proc_line(FILE *in)
 {
   char *s = parts[nparts];
   
@@ -236,7 +233,7 @@ int proc_line(FILE *in, FILE *out)
 
   if(*s == '!') // command, pass to proc_command()
   {
-    proc_command(s, out);
+    proc_command(s);
     return 0;
   }
 
@@ -250,13 +247,13 @@ void read_tabs(FILE *in, FILE *out)
 {
   // put header
   // format 0, 1 track, _ ticks per quarter note
-  put_bytes(out, make_header(0, 1, TICKS_PER_QUARTER), 1);
+  track_app(make_header(0, 1, TICKS_PER_QUARTER));
   
   // struct bytes sig = make_timesig(4,4); // default time signature
   // struct bytes tempo = make_tempo(
 
   // TODO initialize track, append to track instead of call put_bytes()
-  track.evs = malloc(sizeof(struct bytes) * trmax);
+  tr.evs = malloc(sizeof(struct bytes) * trmax);
   
   // allocate defs, parts
   defs = malloc(sizeof(struct def) * maxdefs);
@@ -266,7 +263,7 @@ void read_tabs(FILE *in, FILE *out)
 
   // process lines
   int status;
-  while((status = proc_line(in, out)) != EOF) // process lines until EOF
+  while((status = proc_line(in)) != EOF) // process lines until EOF
   {
     if(status == 1)
     {

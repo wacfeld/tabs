@@ -16,7 +16,7 @@ struct def
   int note;              // note
 };
 
-void proc_command(char *s, FILE *out);
+void proc_command(char *s);
 void read_tabs(FILE *in, FILE *out);
 
 #endif

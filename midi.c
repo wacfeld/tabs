@@ -6,17 +6,11 @@
 
 #include "midi.h"
 
-void put_bytes(FILE *stream, struct bytes b, int discard)
+void put_bytes(FILE *stream, struct bytes b)
 {
   for(int i = 0; i < b.len; i++)
   {
     fputc(b.b[i], stream);
-  }
-
-  if(discard) // no longer needed, call free()
-  {
-    free(b.b);
-    b.b = NULL;
   }
 }
 
@@ -107,26 +101,19 @@ struct bytes make_vlq(uint n)
   return b;
 }
 
-// concatenate y onto x, return x
-struct bytes byte_cat(struct bytes x, struct bytes y, int reall, int discard)
+// concatenate y onto x, return result as new struct bytes
+struct bytes byte_cat(struct bytes x, struct bytes y)
 {
-  if(reall) // for efficiency, some callers might have allocated beforehand
-    x.b = realloc(x.b, x.len + y.len); // make room for y.b
+  // allocate new struct
+  struct bytes b = {x.len+y.len, malloc(x.len + y.len)};
   
-  memcpy(x.b + x.len, y.b, y.len); // append y.b to x.b
+  memcpy(b.b, x.b, x.len); // copy x in
+  memcpy(b.b + x.len, y.b, y.len); // copy y in
   
-  x.len += y.len; // update length
-
-  if(discard) // discard copied contents, if instructed to
-  {
-    free(y.b);
-    y.b = NULL;
-  }
-  
-  return x;
+  return b;
 }
 
-struct bytes make_track_chunk(struct track tr, int discard)
+struct bytes make_track_chunk(struct track tr)
 {
   // calculate number of bytes in body
   unsigned long body_len = 0;
@@ -151,23 +138,17 @@ struct bytes make_track_chunk(struct track tr, int discard)
   // append tracks
   for(int i = 0; i < tr.n_evs; i++)
   {
-    b = byte_cat(b, tr.evs[i], 0, 1); // do not realloc(), do free()
-  }
-
-  if(discard)
-  {
-    free(tr.evs);
-    tr.evs = NULL;
+    b = byte_cat(b, tr.evs[i]); // do not realloc(), do free()
   }
 
   return b;
 }
 
 // create an MTrk event, consisting of a delta followed by an event
-struct bytes make_mtrk_event(uint delta, struct bytes ev, int discard)
+struct bytes make_mtrk_event(uint delta, struct bytes ev)
 {
   struct bytes vlq = make_vlq(delta);       // convert delta into variable length quantity
-  struct bytes b = byte_cat(vlq, ev, 1, discard);
+  struct bytes b = byte_cat(vlq, ev);
 
   return b;
 }

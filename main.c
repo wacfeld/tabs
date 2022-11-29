@@ -9,7 +9,8 @@ int main()
   assert(sizeof(int) >= 4);
   assert(sizeof(long) >= 8);
 
-  put_bytes(stdout, make_header(0, 1, 256), 1);
+  struct bytes b = make_header(0,1,256);
+  put_bytes(stdout, b);
 
   struct bytes sig = make_timesig(2, 4);
   struct bytes tempo = make_tempo(80, 2, 4);
@@ -21,10 +22,10 @@ int main()
   struct bytes note = make_midi_event(NOTE_ON, 9, 2, 0x27, 0x59);
   struct bytes off = make_midi_event(NOTE_OFF, 9, 2, 0x27, 0x59);
   
-  struct bytes evs[] = {make_mtrk_event(0, sig, 1), make_mtrk_event(0, tempo, 1), make_mtrk_event(0, note, 1), make_mtrk_event(0, off, 1), make_mtrk_event(0, end, 1)};
+  struct bytes evs[] = {make_mtrk_event(0, sig), make_mtrk_event(0, tempo), make_mtrk_event(0, note), make_mtrk_event(0, off), make_mtrk_event(0, end)};
   
   struct track tr = {5, evs};
-  struct bytes chunk = make_track_chunk(tr, 0);
+  struct bytes chunk = make_track_chunk(tr);
   
-  put_bytes(stdout, chunk, 1);
+  put_bytes(stdout, chunk);
 }

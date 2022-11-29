@@ -41,7 +41,8 @@ char (*parts)[MAX_LINE] = NULL;
 int nparts = 0;
 int maxparts = 4;
 
-struct track track = {0, NULL};
+struct track tr = {0, NULL};
+int trmax = 8;
 
 // variables
 // these are hard-coded because there aren't many of them and they're all unique
@@ -59,6 +60,20 @@ uint subdiv;
 
 // error messages need to know line number
 int linenum = 1;
+
+void track_app(struct bytes b, int discard)
+{
+  if(tr.n_evs == trmax)
+  {
+    trmax *= 2;
+    tr.evs = realloc(tr.evs, sizeof(struct bytes) * trmax);
+  }
+  
+  tr.evs[tr.n_evs++] = b;
+  
+  if(discard)
+    free(b.b);
+}
 
 // process definition
 // example:
@@ -241,6 +256,7 @@ void read_tabs(FILE *in, FILE *out)
   // struct bytes tempo = make_tempo(
 
   // TODO initialize track, append to track instead of call put_bytes()
+  track.evs = malloc(sizeof(struct bytes) * trmax);
   
   // allocate defs, parts
   defs = malloc(sizeof(struct def) * maxdefs);

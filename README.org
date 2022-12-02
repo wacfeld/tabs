@@ -1,1 +1,17 @@
-(WIP) a configurable drum tablature to MIDI file converter
+A configurable drum tablature to MIDI file converter.
+The resulting MIDI file can be played using a MIDI sequencer or opened using sheet music software.
+
+* build:
+~make~
+
+* example usage
+#+BEGIN_SRC 
+./tabs.out < ex.txt > out.mid
+timidity out.mid
+#+END_SRC
+
+or
+
+~./tabs.out < ex.txt | timidity -~
+
+See ~ex.txt~ for explanation of features

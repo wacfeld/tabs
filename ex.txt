@@ -1,0 +1,68 @@
+# lines starting with # are comments
+# lines starting with ! are commands
+
+# time signature is 4/4
+!set sig 4 4
+
+# each symbol is worth one quarter note
+!set div 4
+
+# 60 bars per minute (not beats per minute)
+!set bpm 60
+
+# see below for instrument numbers:
+# http://www.music.mcgill.ca/~ich/classes/mumt306/StandardMIDIfileformat.html#BMA1_5
+
+# the symbol 'x' on lines starting with 'HH' will be interpreted as 1 note at volume 100 on instrument number 42 (closed hi hat)
+!def HH x 1 100 42
+
+# single note on instrument number 38 (acoustic snare)
+!def SN o 1 100 38
+
+# single note at half volume ('ghost note') on acoustic snare
+!def SN g 1 50 38
+
+# single stroke on the bass drum
+!def BD o 1 100 35
+
+# double stroke on the bass drum
+!def BD d 2 100 35
+
+# china cymbal
+!def CC X 1 120 52
+
+# crash cymbal
+!def CC x 1 100 49
+
+# simple example
+
+HH -x-x -x-x -x-x -x-x
+SN --o- --o- --o- --o-
+BD o--- o--- o--- o---
+
+HH -x-x -x-x -x-x -x-x
+SN --o- --o- --o- --o-
+BD o--- o--- o--- o---
+
+# div, sig, bpm can be changed at any time
+!set div 8
+!set sig 6 8
+!set bpm 72
+
+# transcription of Libera I by Ne Obliviscaris
+
+CC x-x-x- x-x-x- x-x-x- x-----
+SN ------ o--g-g -g-g-g -ooooo
+BD oooooo oooooo doodoo o-----
+
+CC X---X- --X--- X---X- --X---
+SN ------ o----- ------ o-----
+BD ddddo- ddddo- ddddo- ddddo-
+
+CC x-x-x- x-x-x- x-x-x- x-----
+SN -g-g-g o--g-g -g-g-g -ooooo
+BD oooooo oooooo doodoo o-----
+
+CC X---X- --X--- X---X- --X---
+SN ------ o----- ------ o-----
+BD ddddo- ddddo- ddddo- ddddo-

@@ -277,16 +277,20 @@ void proc_tab(char *s)
     int temp = time; // to stop rounding errors from adding up (e.x. from triplets), we use a separate variable to time sub-subdivisions
     for(int i = 0; i < d->amt; i++)
     {
-      temp = time + (subdiv * i) / d_amt;
+      temp = time + (subdiv * i) / d->amt;
       // on and off midi events
       struct bytes on = make_midi_event(NOTE_ON, DRUM_CHANNEL, 2, d->note, d->vol);
       struct bytes off = make_midi_event(NOTE_OFF, DRUM_CHANNEL, 2, d->note, d->vol);
 
       // combine into single note
-      struct note n = {temp, on, off};
+      struct note non = {temp, on};
+
+      int offtime = time + (subdiv * (i+1)) / d->amt;
+      struct note noff = {offtime, off};
       
       // append to notes
-      append(notes, nnotes, mnotes, n);
+      append(notes, nnotes, mnotes, non);
+      append(notes, nnotes, mnotes, noff);
     }
 
     time += tps;
@@ -294,7 +298,7 @@ void proc_tab(char *s)
 }
 
 // compare two struct notes based on their times
-int notecmp(struct note *a, struct note *b)
+int notecmp(const struct note *a, const struct note *b)
 {
   return a->time - b->time;
 }
@@ -343,12 +347,17 @@ void read_tabs(FILE *in, FILE *out)
         inbar = 0;
         
         // sort all the notes by time
-        qsort(notes, nnotes, sizeof(struct note), notecmp);
+        qsort(notes, nnotes, sizeof(struct note), (int (*)(const void *, const void *)) notecmp);
         
-        // write them all into main_track with prepended deltas
+        // write them all into main_tr with prepended deltas
+        int prevtime = 0;
         for(int i = 0; i < nnotes; i++)
         {
-          // struct bytes mev = make_mtrk_event(
+          int del = notes[i].time - prevtime;
+          prevtime = notes[i].time;
+          
+          struct bytes mev = make_mtrk_event(del, notes[i].ev);
+          track_app(&main_tr, mev);
         }
         
         free(notes);

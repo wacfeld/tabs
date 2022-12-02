@@ -21,8 +21,7 @@ struct def
 struct note
 {
   int time; // time since start of line
-  struct bytes on; // note on event without delta
-  struct bytes off; // note off event without delta
+  struct bytes ev; // note event without delta
 };
 
 void read_tabs(FILE *in, FILE *out);

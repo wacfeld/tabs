@@ -14,8 +14,10 @@
 
 #define append(arr, size, max, item) do{ if(size == max) { max++; max *= 2; arr = realloc(arr, max*sizeof(*arr)); } arr[size++] = item; } while(0)
 
-#define dbg(fmt, ...) do {fprintf(stderr, fmt __VA_OPT__(,) __VA_ARGS__);}while(0)
-#define putd(x) fprintf(stderr, #x ": %d\n", x)
+// #define dbg(fmt, ...) do {fprintf(stderr, fmt __VA_OPT__(,) __VA_ARGS__);}while(0)
+#define dbg(fmt, ...) do{}while(0)
+// #define putd(x) fprintf(stderr, #x ": %d\n", x)
+#define putd(x) do{}while(0)
 #define error(fmt, ...) do { fprintf(stderr, "%s: %d: %s: line %d: " fmt, __FILE__, __LINE__, __func__, linenum __VA_OPT__(,) __VA_ARGS__); exit(1); } while(0)
 
 /* 

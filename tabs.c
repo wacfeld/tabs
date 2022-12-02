@@ -13,6 +13,7 @@
 #define ASTRING(x) STRING(x)
 
 #define append(arr, size, max, item) do{ if(size == max) { max++; max *= 2; arr = realloc(arr, max*sizeof(*arr)); } arr[size++] = item; } while(0)
+#define dbg(fmt, ...) do {fprintf(stderr, fmt __VA_OPT__(,) __VA_ARGS__);}while(0)
 
 #define error(fmt, ...) do { fprintf(stderr, "%s: %s: line %d: " fmt, __FILE__, __func__, linenum __VA_OPT__(,) __VA_ARGS__); exit(1); } while(0)
 
@@ -108,6 +109,8 @@ void proc_def(char *s)
     assert(defs);
   }
   defs[ndefs++] = d;
+
+  dbg("added definition label %s symbol %c amount %d volume %d note %d\n", d.lab, d.symb, d.amt, d.vol, d.note);
 }
 
 void proc_set(char *s)
@@ -145,6 +148,8 @@ void proc_set(char *s)
     struct bytes ev = make_timesig(sig_numer, sig_denom); // create event
     struct bytes mtrk_ev = make_mtrk_event(0, ev); // prepend delta
     track_app(&main_tr, mtrk_ev); // output
+
+    dbg("set time signature to %d %d\n", sig_numer, sig_denom);
   }
 
   if(!strcmp(name, "bpm")) // tempo
@@ -160,6 +165,8 @@ void proc_set(char *s)
     struct bytes ev = make_tempo(bpm, sig_numer, sig_denom); // create event
     struct bytes mtrk_ev = make_mtrk_event(0, ev); // prepend delta
     track_app(&main_tr, mtrk_ev); // output
+
+    dbg("set bpm to %d\n", bpm);
   }
 
   if(!strcmp(name, "div")) // subdivision
@@ -180,6 +187,8 @@ void proc_set(char *s)
         temp /= 2;
       }
     }
+
+    dbg("set subdiv to %d\n", subdiv);
   }
 
   // no such variable, print error
@@ -193,11 +202,13 @@ void proc_command(char *s)
   
   if(!strncmp(s+1, "def", 3) && isspace(s[4])) // definition
   {
+    dbg("reading def...\n");
     proc_def(s+4); // write into defs
   }
   
   if(!strncmp(s+1, "set", 3) && isspace(s[4])) // variable assignment
   {
+    dbg("reading set...\n");
     proc_set(s+4); // write into varnames, varvals; 
   }
 }
@@ -371,6 +382,15 @@ void read_tabs(FILE *in, FILE *out)
   }
 
   // TODO output end of track, calculate track length, etc.
+  
+  // end of track
+  struct bytes end = make_bytes(3, 0xff, 0x2f, 0x00);
+  track_app(&main_tr, make_mtrk_event(0,end));
+  
+  // create track chunk
+  struct bytes chunk = make_track_chunk(main_tr);
+  // output
+  put_bytes(out, chunk);
 
   free(defs);
   defs = 0;

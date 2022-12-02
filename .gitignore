@@ -2,6 +2,7 @@
 *.sw*
 LICENSE
 tags
+ig/
 
 # Prerequisites
 *.d

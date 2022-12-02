@@ -167,7 +167,7 @@ struct bytes make_midi_event(enum status stat, uint channel, int ndat, uchar dat
   s[0] = stat << 4; // upper 4 bits status
   s[0] += channel; // lower 4 bits channel
   s[1] = dat1;
-  if(ndat == 2) s[2] = dat1;
+  if(ndat == 2) s[2] = dat2;
 
   struct bytes b = {1 + ndat, s};
   return b;

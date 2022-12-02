@@ -13,9 +13,10 @@
 #define ASTRING(x) STRING(x)
 
 #define append(arr, size, max, item) do{ if(size == max) { max++; max *= 2; arr = realloc(arr, max*sizeof(*arr)); } arr[size++] = item; } while(0)
-#define dbg(fmt, ...) do {fprintf(stderr, fmt __VA_OPT__(,) __VA_ARGS__);}while(0)
 
-#define error(fmt, ...) do { fprintf(stderr, "%s: %s: line %d: " fmt, __FILE__, __func__, linenum __VA_OPT__(,) __VA_ARGS__); exit(1); } while(0)
+#define dbg(fmt, ...) do {fprintf(stderr, fmt __VA_OPT__(,) __VA_ARGS__);}while(0)
+#define putd(x) fprintf(stderr, #x ": %d\n", x)
+#define error(fmt, ...) do { fprintf(stderr, "%s: %d: %s: line %d: " fmt, __FILE__, __LINE__, __func__, linenum __VA_OPT__(,) __VA_ARGS__); exit(1); } while(0)
 
 /* 
    all config lines are of the form
@@ -49,15 +50,15 @@ int mnotes = 0;
 // these are hard-coded because there aren't many of them and they're all unique
 
 // time signature
-uint sig_numer;
-uint sig_denom;
+uint sig_numer = 0;
+uint sig_denom = 0;
 
 // tempo in bars per minute
-uint bpm;
+uint bpm = 0;
 
 // subdivision of whole note (quarters, eights, etc.) that a single character in the tablature represents
 // e.x. if subdiv == 4 then 'o' is a quarter note, 'w' (double) is an eighth note
-uint subdiv;
+uint subdiv = 0;
 
 // error messages need to know line number
 int linenum = 1;
@@ -95,10 +96,11 @@ void proc_def(char *s)
   {
     error("missing fields\n");
   }
-  if(n == 5) // trailing non-whitespace
-  {
-    error("trailing characters\n");
-  }
+  
+  // if(n == 5) // trailing non-whitespace
+  // {
+  //   error("trailing characters %d\n", *trail);
+  // }
 
   // append d to defs
   assert(defs);
@@ -122,7 +124,7 @@ void proc_set(char *s)
     error("missing variable name\n");
 
   // go through possible variables case-by-case
-  if(!strcmp(name, "sig")) // time signature
+  else if(!strcmp(name, "sig")) // time signature
   {
     // read numerator and denominator
     if(sscanf(s, "%*s %u %u %1s", &sig_numer, &sig_denom, trail) != 2)
@@ -152,9 +154,10 @@ void proc_set(char *s)
     dbg("set time signature to %d %d\n", sig_numer, sig_denom);
   }
 
-  if(!strcmp(name, "bpm")) // tempo
+  else if(!strcmp(name, "bpm")) // tempo
   {
-    if(scanf(s, "%*s %u %1s", &bpm, trail) != 1)
+    // if(scanf(s, "%*s %u %1s", &bpm, trail) != 1)
+    if(sscanf(s, "%*s %u %1s", &bpm, trail) < 1)
       error("bpm: syntax error\n");
 
     // check tempo is valid
@@ -162,6 +165,8 @@ void proc_set(char *s)
       error("bpm: bpm is 0\n");
 
     // output tempo change
+    // putd(sig_numer);
+    // putd(sig_denom);
     struct bytes ev = make_tempo(bpm, sig_numer, sig_denom); // create event
     struct bytes mtrk_ev = make_mtrk_event(0, ev); // prepend delta
     track_app(&main_tr, mtrk_ev); // output
@@ -169,10 +174,13 @@ void proc_set(char *s)
     dbg("set bpm to %d\n", bpm);
   }
 
-  if(!strcmp(name, "div")) // subdivision
+  else if(!strcmp(name, "div")) // subdivision
   {
-    if(scanf(s, "%*s %u %1s", &subdiv, trail) != 1)
+    // if(scanf(s, "%*s %u %1s", &subdiv, trail) != 1)
+    if(sscanf(s, " %*s %u %1s", &subdiv, trail) < 1)
+    {
       error("div: syntax error\n");
+    }
 
     // check subdivision is valid
     {
@@ -192,7 +200,8 @@ void proc_set(char *s)
   }
 
   // no such variable, print error
-  error("variable \"%s\" does not exist\n", name);
+  else
+    error("variable \"%s\" does not exist\n", name);
 }
 
 // process command passed by read_tabs()
@@ -257,12 +266,18 @@ int proc_line(FILE *in, char *s)
 // process one line of tab, write into notes
 void proc_tab(char *s)
 {
+  dbg("tab in\n");
   // grab label
   char lab[3] = {s[0], s[1], 0};
   
   assert(strlen(s) >= LABEL_LEN);
   int time = 0; // time in ticks since start of line
 
+  if(!subdiv)
+  {
+    dbg("subdiv hasn't been set; defaulting to 4\n");
+    subdiv = 4;
+  }
   int tps = TICKS_PER_QUARTER * 4 / subdiv; // calculate ticks per subdivision at the moment
 
   for(char *p = s + LABEL_LEN; *p; p++)
@@ -270,7 +285,11 @@ void proc_tab(char *s)
     if(isspace(*p))
       continue;
     
-    if(*p == REST) ;
+    if(*p == REST)
+    {
+      time += tps;
+      continue;
+    }
 
     struct def *d = NULL;
     // lookup def
@@ -278,7 +297,10 @@ void proc_tab(char *s)
     {
       if(!strcmp(defs[i].lab, lab)
           && defs[i].symb == *p)
+      {
         d = defs+i;
+        // dbg("found def %d which has velocity %d\n", i, d->vol);
+      }
     }
 
     if(!d)
@@ -288,24 +310,28 @@ void proc_tab(char *s)
     int temp = time; // to stop rounding errors from adding up (e.x. from triplets), we use a separate variable to time sub-subdivisions
     for(int i = 0; i < d->amt; i++)
     {
-      temp = time + (subdiv * i) / d->amt;
+      temp = time + (tps*i) / d->amt;
+      putd(temp);
       // on and off midi events
       struct bytes on = make_midi_event(NOTE_ON, DRUM_CHANNEL, 2, d->note, d->vol);
       struct bytes off = make_midi_event(NOTE_OFF, DRUM_CHANNEL, 2, d->note, d->vol);
+      dbg("velocity %d\n", d->vol);
 
       // combine into single note
       struct note non = {temp, on};
 
-      int offtime = time + (subdiv * (i+1)) / d->amt;
+      int offtime = time + (tps * (i+1)) / d->amt;
       struct note noff = {offtime, off};
       
       // append to notes
+      dbg("appending a note\n");
       append(notes, nnotes, mnotes, non);
       append(notes, nnotes, mnotes, noff);
     }
 
     time += tps;
   }
+  dbg("tab out\n");
 }
 
 // compare two struct notes based on their times
@@ -314,12 +340,39 @@ int notecmp(const struct note *a, const struct note *b)
   return a->time - b->time;
 }
 
+// sort, write notes to main_tr, deallocate
+void flush_notes()
+{
+  if(!nnotes)
+    return;
+  
+  // sort all the notes by time
+  qsort(notes, nnotes, sizeof(struct note), (int (*)(const void *, const void *)) notecmp);
+  
+  // write them all into main_tr with prepended deltas
+  int prevtime = 0;
+  for(int i = 0; i < nnotes; i++)
+  {
+    int del = notes[i].time - prevtime;
+    prevtime = notes[i].time;
+    
+    struct bytes mev = make_mtrk_event(del, notes[i].ev);
+    track_app(&main_tr, mev);
+    // putd(main_tr.n);
+  }
+  
+  free(notes);
+  notes = NULL;
+  nnotes = 0;
+  mnotes = 0;
+}
+
 // read tabs from in, write midi output to out
 void read_tabs(FILE *in, FILE *out)
 {
   // put header
   // format 0; 1 track; _ ticks per quarter note
-  track_app(&main_tr, make_header(0, 1, TICKS_PER_QUARTER));
+  put_bytes(out, make_header(0, 1, TICKS_PER_QUARTER));
   
   // struct bytes sig = make_timesig(4,4); // default time signature
   // struct bytes tempo = make_tempo(
@@ -330,6 +383,9 @@ void read_tabs(FILE *in, FILE *out)
   // allocate defs
   defs = malloc(sizeof(struct def) * maxdefs);
   assert(defs);
+  
+  proc_set(" sig 4 4\n");
+  proc_set(" bpm 15\n");
 
   // process lines
   int status;
@@ -353,33 +409,17 @@ void read_tabs(FILE *in, FILE *out)
     
     else // status == 0
     {
-      if(inbar) // end of bar; process stuf and then deallocate
+      if(inbar) // end of bar; process stuff and then deallocate
       {
         inbar = 0;
-        
-        // sort all the notes by time
-        qsort(notes, nnotes, sizeof(struct note), (int (*)(const void *, const void *)) notecmp);
-        
-        // write them all into main_tr with prepended deltas
-        int prevtime = 0;
-        for(int i = 0; i < nnotes; i++)
-        {
-          int del = notes[i].time - prevtime;
-          prevtime = notes[i].time;
-          
-          struct bytes mev = make_mtrk_event(del, notes[i].ev);
-          track_app(&main_tr, mev);
-        }
-        
-        free(notes);
-        notes = NULL;
-        nnotes = 0;
-        mnotes = 0;
+        flush_notes();
       }
     }
     
     linenum++;
   }
+
+  flush_notes();
 
   // TODO output end of track, calculate track length, etc.
   

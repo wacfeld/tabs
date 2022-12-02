@@ -12,6 +12,8 @@
 #define STRING(x) #x
 #define ASTRING(x) STRING(x)
 
+#define append(arr, size, max, item) do{ if(size == max) { max++; max *= 2; arr = realloc(arr, max*sizeof(*arr)); } arr[size++] = item; } while(0)
+
 #define error(fmt, ...) do { fprintf(stderr, "%s: %s: line %d: " fmt, __FILE__, __func__, linenum __VA_OPT__(,) __VA_ARGS__); exit(1); } while(0)
 
 /* 
@@ -36,7 +38,11 @@ struct def *defs;
 int ndefs = 0;
 int maxdefs = 4;
 
-struct track main_tr = {0, 8, NULL};
+struct track main_tr = {0, 0, NULL};
+
+struct note *notes = NULL;
+int nnotes = 0;
+int mnotes = 0;
 
 // variables
 // these are hard-coded because there aren't many of them and they're all unique
@@ -58,15 +64,16 @@ int time = 0; // time in ticks since start of piece, used to calculate deltas
 int inbar = 0; // whether we're currently processing a bar or not
 
 // append bytes b to track tr
-void track_app(struct track tr, struct bytes b)
+void track_app(struct track *tr, struct bytes b)
 {
-  if(tr.n == tr.max)
+  if(tr->n == tr->max)
   {
-    tr.max *= 2;
-    tr.evs = realloc(tr.evs, sizeof(struct bytes) * tr.max);
+    tr->max++;
+    tr->max *= 2;
+    tr->evs = realloc(tr->evs, sizeof(struct bytes) * tr->max);
   }
   
-  tr.evs[tr.n++] = b;
+  tr->evs[tr->n++] = b;
 }
 
 // process definition
@@ -137,7 +144,7 @@ void proc_set(char *s)
     // output time signature change
     struct bytes ev = make_timesig(sig_numer, sig_denom); // create event
     struct bytes mtrk_ev = make_mtrk_event(0, ev); // prepend delta
-    track_app(main_tr, mtrk_ev); // output
+    track_app(&main_tr, mtrk_ev); // output
   }
 
   if(!strcmp(name, "bpm")) // tempo
@@ -152,7 +159,7 @@ void proc_set(char *s)
     // output tempo change
     struct bytes ev = make_tempo(bpm, sig_numer, sig_denom); // create event
     struct bytes mtrk_ev = make_mtrk_event(0, ev); // prepend delta
-    track_app(main_tr, mtrk_ev); // output
+    track_app(&main_tr, mtrk_ev); // output
   }
 
   if(!strcmp(name, "div")) // subdivision
@@ -236,12 +243,68 @@ int proc_line(FILE *in, char *s)
   return 1;
 }
 
+// process one line of tab, write into notes
+void proc_tab(char *s)
+{
+  // grab label
+  char lab[3] = {s[0], s[1], 0};
+  
+  assert(strlen(s) >= LABEL_LEN);
+  int time = 0; // time in ticks since start of line
+
+  int tps = TICKS_PER_QUARTER * 4 / subdiv; // calculate ticks per subdivision at the moment
+
+  for(char *p = s + LABEL_LEN; *p; p++)
+  {
+    if(isspace(*p))
+      continue;
+    
+    if(*p == REST) ;
+
+    struct def *d = NULL;
+    // lookup def
+    for(int i = 0; i < ndefs; i++)
+    {
+      if(!strcmp(defs[i].lab, lab)
+          && defs[i].symb == *p)
+        d = defs+i;
+    }
+
+    if(!d)
+      error("could not find definition for %s %c\n", lab, *p);
+    
+    // create note(s)
+    int temp = time; // to stop rounding errors from adding up (e.x. from triplets), we use a separate variable to time sub-subdivisions
+    for(int i = 0; i < d->amt; i++)
+    {
+      temp = time + (subdiv * i) / d_amt;
+      // on and off midi events
+      struct bytes on = make_midi_event(NOTE_ON, DRUM_CHANNEL, 2, d->note, d->vol);
+      struct bytes off = make_midi_event(NOTE_OFF, DRUM_CHANNEL, 2, d->note, d->vol);
+
+      // combine into single note
+      struct note n = {temp, on, off};
+      
+      // append to notes
+      append(notes, nnotes, mnotes, n);
+    }
+
+    time += tps;
+  }
+}
+
+// compare two struct notes based on their times
+int notecmp(struct note *a, struct note *b)
+{
+  return a->time - b->time;
+}
+
 // read tabs from in, write midi output to out
 void read_tabs(FILE *in, FILE *out)
 {
   // put header
   // format 0; 1 track; _ ticks per quarter note
-  track_app(main_tr, make_header(0, 1, TICKS_PER_QUARTER));
+  track_app(&main_tr, make_header(0, 1, TICKS_PER_QUARTER));
   
   // struct bytes sig = make_timesig(4,4); // default time signature
   // struct bytes tempo = make_tempo(
@@ -263,9 +326,35 @@ void read_tabs(FILE *in, FILE *out)
       if(!inbar) // start of bar; initialize
       {
         inbar = 1;
+
+        notes = NULL;
+        nnotes = 0;
+        mnotes = 0;
+      }
+
+      // pass to proc_tab()
+      proc_tab(s);
+    }
+    
+    else // status == 0
+    {
+      if(inbar) // end of bar; process stuf and then deallocate
+      {
+        inbar = 0;
         
-        // read notes into bar
-        struct track bar = {0,8,NULL};
+        // sort all the notes by time
+        qsort(notes, nnotes, sizeof(struct note), notecmp);
+        
+        // write them all into main_track with prepended deltas
+        for(int i = 0; i < nnotes; i++)
+        {
+          // struct bytes mev = make_mtrk_event(
+        }
+        
+        free(notes);
+        notes = NULL;
+        nnotes = 0;
+        mnotes = 0;
       }
     }
     

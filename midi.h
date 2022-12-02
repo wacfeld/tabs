@@ -18,6 +18,7 @@ struct track
 };
 
 enum status {NOTE_OFF=8, NOTE_ON=9,};
+#define DRUM_CHANNEL 9
 
 void put_bytes(FILE *stream, struct bytes b);
 void write_bytes(uchar *s, int n, ...);

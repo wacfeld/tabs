@@ -280,10 +280,13 @@ void proc_tab(char *s)
   }
   int tps = TICKS_PER_QUARTER * 4 / subdiv; // calculate ticks per subdivision at the moment
 
+  int len = 0;
   for(char *p = s + LABEL_LEN; *p; p++)
   {
     if(isspace(*p))
       continue;
+
+    len++;
     
     if(*p == REST)
     {
@@ -331,6 +334,12 @@ void proc_tab(char *s)
 
     time += tps;
   }
+  
+  // append end-of-bar dummy note so that the next bar does not come in early
+  struct bytes eob = make_midi_event(NOTE_OFF, DRUM_CHANNEL, 2, 49, 100);
+  struct note neob = {time, eob};
+  append(notes, nnotes, mnotes, neob);
+  
   dbg("tab out\n");
 }
 
@@ -345,7 +354,7 @@ void flush_notes()
 {
   if(!nnotes)
     return;
-  
+
   // sort all the notes by time
   qsort(notes, nnotes, sizeof(struct note), (int (*)(const void *, const void *)) notecmp);
   

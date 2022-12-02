@@ -264,6 +264,7 @@ void read_tabs(FILE *in, FILE *out)
       {
         inbar = 1;
         
+        // read notes into bar
         struct track bar = {0,8,NULL};
       }
     }
